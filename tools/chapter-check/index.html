@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <title>章节序号检测 — 生活工具箱</title>
+  <link rel="stylesheet" href="../../styles/main.css">
+  <style>
+    textarea {
+      height: 420px;
+    }
+
+    @media (max-width: 640px) {
+      textarea {
+        height: 300px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<main class="page-main">
+  <div class="container">
+    <div class="breadcrumb">
+      <a href="../../index.html">首页</a>
+      <span class="sep">/</span>
+      <span class="current">章节序号检测</span>
+    </div>
+
+    <div class="dashboard">
+
+      <div class="input-panel">
+        <div class="panel-inner">
+          <div class="panel-title">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="16 3 21 3 21 8"/>
+              <line x1="4" y1="20" x2="21" y2="3"/>
+              <polyline points="21 16 21 21 16 21"/>
+              <line x1="15" y1="15" x2="21" y2="21"/>
+              <line x1="4" y1="4" x2="9" y2="9"/>
+            </svg>
+            章节原文录入
+          </div>
+          <textarea id="chapterInput" placeholder="粘贴小说章节列表，支持以下两种格式：
+
+第1章 穿越成手游的一星杂鱼
+第2章 开局一把烧火棍
+
+结婚七年，极致独宠 | 系列名（1）
+第七年的隐秘裂缝 | 系列名（2）
+
+日期行和空行会被自动忽略，仅提取含章节序号的行。
+括号序号支持全角（）和半角()两种括号。"></textarea>
+          <div class="btn-group" style="margin-top: 1rem;">
+            <button class="btn btn-primary" id="detectBtn">检测章节完整性</button>
+            <button class="btn btn-secondary" id="clearBtn">清空</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="result-panel">
+        <div class="panel-inner">
+          <div class="panel-title">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <line x1="16" y1="13" x2="8" y2="13"/>
+              <line x1="16" y1="17" x2="8" y2="17"/>
+            </svg>
+            检测报告
+          </div>
+          <div id="resultArea" class="result-scroll">
+            <div class="success-msg">
+              等待分析 — 粘贴章节列表后点击检测按钮
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</main>
+
+<footer>
+  <p>生活工具箱 &copy; 2026 — 简约实用的在线工具集合</p>
+</footer>
+
+<script src="chapter-parser.js"></script>
+<script src="chapter-check.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <title>中英标点转换 — 生活工具箱</title>
+  <link rel="stylesheet" href="../../styles/main.css">
+  <style>
+    textarea {
+      height: 280px;
+    }
+
+    @media (max-width: 640px) {
+      textarea {
+        height: 200px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<main class="page-main">
+  <div class="container">
+    <div class="breadcrumb">
+      <a href="../../index.html">首页</a>
+      <span class="sep">/</span>
+      <span class="current">中英标点转换</span>
+    </div>
+
+    <div class="dashboard">
+
+      <div class="input-panel">
+        <div class="panel-inner">
+          <div class="panel-title">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <line x1="16" y1="13" x2="8" y2="13"/>
+              <line x1="16" y1="17" x2="8" y2="17"/>
+            </svg>
+            源文本
+          </div>
+          <textarea id="txtInput" placeholder="在此粘贴需要转换标点的文本..."></textarea>
+          <div class="btn-group" style="margin-top: 1rem;">
+            <button class="btn btn-primary" id="btnToChinese">中文标点</button>
+            <button class="btn btn-primary" id="btnToEnglish">英文标点</button>
+            <button class="btn btn-secondary" id="btnClear">清空</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="result-panel">
+        <div class="panel-inner">
+          <div class="panel-title">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="7 10 12 15 17 10"/>
+              <line x1="12" y1="15" x2="12" y2="3"/>
+            </svg>
+            转换结果
+          </div>
+          <textarea id="txtOutput" readonly placeholder="转换结果将显示在这里..."></textarea>
+          <div class="btn-group" style="margin-top: 1rem; justify-content: flex-end;">
+            <button class="btn btn-secondary" id="btnCopy">复制结果</button>
+            <button class="btn btn-primary" id="btnDownload">下载文件</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</main>
+
+<footer>
+  <p>生活工具箱 &copy; 2026 — 简约实用的在线工具集合</p>
+</footer>
+
+<script>
+  var config_punctuation_convert = {
+    input: ""
+  };
+
+  function punctuationToChinese(text) {
+    if (!text) return "";
+    return text
+      .replace(/,/g, "，")
+      .replace(/\./g, "。")
+      .replace(/'/g, "’")
+      .replace(/"/g, "”")
+      .replace(/;/g, "；")
+      .replace(/:/g, "：")
+      .replace(/\?/g, "？")
+      .replace(/!/g, "！")
+      .replace(/\(/g, "（")
+      .replace(/\)/g, "）")
+      .replace(/\[|{/g, "【")
+      .replace(/\]|}/g, "】")
+      .replace(/</g, "＜")
+      .replace(/>/g, "＞");
+  }
+
+  function punctuationToEnglish(text) {
+    if (!text) return "";
+    return text
+      .replace(/，/g, ",")
+      .replace(/。/g, ".")
+      .replace(/‘/g, "'")
+      .replace(/’/g, "'")
+      .replace(/“/g, '"')
+      .replace(/”/g, '"')
+      .replace(/；/g, ";")
+      .replace(/：/g, ":")
+      .replace(/？/g, "?")
+      .replace(/！/g, "!")
+      .replace(/（/g, "(")
+      .replace(/）/g, ")")
+      .replace(/【/g, "[")
+      .replace(/】/g, "]")
+      .replace(/＜/g, "<")
+      .replace(/＞/g, ">");
+  }
+
+  function textPunctuationToChinese() {
+    var input = document.getElementById('txtInput').value;
+    if (!input.trim()) {
+      alert('源字符串不能为空');
+      return;
+    }
+    var result = punctuationToChinese(input);
+    document.getElementById('txtOutput').value = result;
+    saveConfig();
+  }
+
+  function textPunctuationToEnglish() {
+    var input = document.getElementById('txtInput').value;
+    if (!input.trim()) {
+      alert('源字符串不能为空');
+      return;
+    }
+    var result = punctuationToEnglish(input);
+    document.getElementById('txtOutput').value = result;
+    saveConfig();
+  }
+
+  function clearAll() {
+    document.getElementById('txtInput').value = '';
+    document.getElementById('txtOutput').value = '';
+    saveConfig();
+  }
+
+  function copyResult() {
+    var output = document.getElementById('txtOutput');
+    output.select();
+    document.execCommand('copy');
+    alert('已复制到剪贴板');
+  }
+
+  function downloadFile() {
+    var content = document.getElementById('txtOutput').value;
+    if (!content) {
+      alert('没有内容可下载');
+      return;
+    }
+    var blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = 'punctuation-convert.txt';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  function saveConfig() {
+    config_punctuation_convert.input = document.getElementById('txtInput').value;
+    localStorage.setItem('config_punctuation_convert', JSON.stringify(config_punctuation_convert));
+  }
+
+  function loadConfig() {
+    var saved = localStorage.getItem('config_punctuation_convert');
+    if (saved) {
+      try {
+        config_punctuation_convert = JSON.parse(saved);
+        document.getElementById('txtInput').value = config_punctuation_convert.input || '';
+      } catch (e) {
+        console.error('Failed to load config:', e);
+      }
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', function() {
+    loadConfig();
+    
+    document.getElementById('btnToChinese').addEventListener('click', textPunctuationToChinese);
+    document.getElementById('btnToEnglish').addEventListener('click', textPunctuationToEnglish);
+    document.getElementById('btnClear').addEventListener('click', clearAll);
+    document.getElementById('btnCopy').addEventListener('click', copyResult);
+    document.getElementById('btnDownload').addEventListener('click', downloadFile);
+
+    document.getElementById('txtInput').addEventListener('input', function() {
+      saveConfig();
+    });
+  });
+</script>
+
+</body>
+</html>

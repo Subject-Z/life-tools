@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <title>汇率转换 — 生活工具箱</title>
+  <link rel="stylesheet" href="../../styles/main.css">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<main class="page-main">
+  <div class="container">
+    <div class="breadcrumb">
+      <a href="../../index.html">首页</a>
+      <span class="sep">/</span>
+      <span class="current">汇率转换</span>
+    </div>
+
+    <div class="converter-wrapper">
+      <div class="converter-card">
+        <!-- 源货币输入区 -->
+        <div class="currency-input-card" id="fromCard">
+          <div class="currency-label">源货币</div>
+          <div class="currency-input-group">
+            <div class="amount-input-wrapper">
+              <input type="text" id="fromAmount" class="amount-input" placeholder="0" autofocus>
+            </div>
+            <div class="currency-select-wrapper">
+              <select id="fromCurrency" class="currency-select"></select>
+            </div>
+          </div>
+          <div class="currency-name" id="fromCurrencyName"></div>
+        </div>
+
+        <!-- 交换按钮 -->
+        <div class="swap-container">
+          <div class="divider-line"></div>
+          <button class="swap-btn" id="btnSwap" title="交换货币">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+              <path d="M7 16V4M7 4L3 8M7 4L11 8"/>
+              <path d="M17 8V20M17 20L21 16M17 20L13 16"/>
+            </svg>
+          </button>
+        </div>
+
+        <!-- 目标货币输入区 -->
+        <div class="currency-input-card" id="toCard">
+          <div class="currency-label">目标货币</div>
+          <div class="currency-input-group">
+            <div class="amount-input-wrapper">
+              <input type="text" id="toAmount" class="amount-input" placeholder="0">
+            </div>
+            <div class="currency-select-wrapper">
+              <select id="toCurrency" class="currency-select"></select>
+            </div>
+          </div>
+          <div class="currency-name" id="toCurrencyName"></div>
+        </div>
+
+        <div class="error-message" id="errorMessage"></div>
+      </div>
+
+      <!-- 汇率信息 -->
+      <div class="rate-info" id="rateInfo">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="12" y1="16" x2="12" y2="12"/>
+          <line x1="12" y1="8" x2="12.01" y2="8"/>
+        </svg>
+        <span id="rateText">输入金额开始转换</span>
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer>
+  <p>生活工具箱 &copy; 2026 — 简约实用的在线工具集合</p>
+</footer>
+
+<script src="script.js"></script>
+
+</body>
+</html>
