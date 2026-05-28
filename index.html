@@ -41,13 +41,13 @@
 
 <footer>
   <p>生活工具箱 &copy; 2026 — 简约实用的在线工具集合</p>
+  <p><a href="https://github.com/Subject-Z/life-tools" target="_blank" rel="noopener noreferrer">反馈与建议</a></p>
 </footer>
 
-<script src="config/tools.js"></script>
-<script src="scripts/core.js"></script>
-<script>
-  document.addEventListener('DOMContentLoaded', function() {
-    LifeTools.Core.renderToolGrid('toolGrid');
+<script type="module">
+  import { renderToolGrid } from './scripts/core.js';
+  document.addEventListener('DOMContentLoaded', () => {
+    renderToolGrid('toolGrid');
   });
 </script>
 

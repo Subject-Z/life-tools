@@ -1,52 +1,37 @@
-window.LifeTools = window.LifeTools || {};
+export const escapeHtml = (str) => str
+  .replace(/&/g, '&amp;')
+  .replace(/</g, '&lt;')
+  .replace(/>/g, '&gt;')
+  .replace(/"/g, '&quot;')
+  .replace(/'/g, '&#39;');
 
-window.LifeTools.Utils = (function() {
-  'use strict';
-
-  function escapeHtml(str) {
-    return str
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#39;');
+export const createElement = (tag, attrs, children) => {
+  const el = document.createElement(tag);
+  if (attrs) {
+    for (const [key, value] of Object.entries(attrs)) {
+      if (key === 'className') {
+        el.className = value;
+      } else if (key === 'style') {
+        el.style.cssText = value;
+      } else if (key.startsWith('on')) {
+        el.addEventListener(key.slice(2).toLowerCase(), value);
+      } else {
+        el.setAttribute(key, value);
+      }
+    }
   }
-
-  function createElement(tag, attrs, children) {
-    var el = document.createElement(tag);
-    if (attrs) {
-      for (var key in attrs) {
-        if (attrs.hasOwnProperty(key)) {
-          if (key === 'className') {
-            el.className = attrs[key];
-          } else if (key === 'style') {
-            el.style.cssText = attrs[key];
-          } else if (key.startsWith('on')) {
-            el.addEventListener(key.slice(2).toLowerCase(), attrs[key]);
-          } else {
-            el.setAttribute(key, attrs[key]);
-          }
+  if (children) {
+    if (typeof children === 'string') {
+      el.innerHTML = children;
+    } else if (Array.isArray(children)) {
+      children.forEach(child => {
+        if (typeof child === 'string') {
+          el.appendChild(document.createTextNode(child));
+        } else if (child instanceof HTMLElement) {
+          el.appendChild(child);
         }
-      }
+      });
     }
-    if (children) {
-      if (typeof children === 'string') {
-        el.innerHTML = children;
-      } else if (Array.isArray(children)) {
-        children.forEach(function(child) {
-          if (typeof child === 'string') {
-            el.appendChild(document.createTextNode(child));
-          } else if (child instanceof HTMLElement) {
-            el.appendChild(child);
-          }
-        });
-      }
-    }
-    return el;
   }
-
-  return {
-    escapeHtml: escapeHtml,
-    createElement: createElement
-  };
-})();
+  return el;
+};

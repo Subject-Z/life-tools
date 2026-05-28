@@ -15,6 +15,20 @@
         height: 200px;
       }
     }
+
+    .preview-notice {
+      display: none;
+      font-size: 0.8rem;
+      color: var(--accent, #4f7cff);
+      margin-top: 0.25rem;
+      padding: 0.3rem 0.6rem;
+      background: var(--bg, #f5f5f5);
+      border-radius: 4px;
+    }
+
+    #btnCancel {
+      display: none;
+    }
   </style>
 </head>
 <body>
@@ -44,6 +58,7 @@
           <div class="btn-group" style="margin-top: 1rem;">
             <button class="btn btn-primary" id="btnToChinese">中文标点</button>
             <button class="btn btn-primary" id="btnToEnglish">英文标点</button>
+            <button class="btn btn-secondary" id="btnCancel">取消</button>
             <button class="btn btn-secondary" id="btnClear">清空</button>
           </div>
         </div>
@@ -60,6 +75,7 @@
             转换结果
           </div>
           <textarea id="txtOutput" readonly placeholder="转换结果将显示在这里..."></textarea>
+          <div class="preview-notice" id="previewNotice"></div>
           <div class="btn-group" style="margin-top: 1rem; justify-content: flex-end;">
             <button class="btn btn-secondary" id="btnCopy">复制结果</button>
             <button class="btn btn-primary" id="btnDownload">下载文件</button>
@@ -73,136 +89,10 @@
 
 <footer>
   <p>生活工具箱 &copy; 2026 — 简约实用的在线工具集合</p>
+  <p><a href="https://github.com/Subject-Z/life-tools" target="_blank" rel="noopener noreferrer">反馈与建议</a></p>
 </footer>
 
-<script>
-  var config_punctuation_convert = {
-    input: ""
-  };
-
-  function punctuationToChinese(text) {
-    if (!text) return "";
-    return text
-      .replace(/,/g, "，")
-      .replace(/\./g, "。")
-      .replace(/'/g, "’")
-      .replace(/"/g, "”")
-      .replace(/;/g, "；")
-      .replace(/:/g, "：")
-      .replace(/\?/g, "？")
-      .replace(/!/g, "！")
-      .replace(/\(/g, "（")
-      .replace(/\)/g, "）")
-      .replace(/\[|{/g, "【")
-      .replace(/\]|}/g, "】")
-      .replace(/</g, "＜")
-      .replace(/>/g, "＞");
-  }
-
-  function punctuationToEnglish(text) {
-    if (!text) return "";
-    return text
-      .replace(/，/g, ",")
-      .replace(/。/g, ".")
-      .replace(/‘/g, "'")
-      .replace(/’/g, "'")
-      .replace(/“/g, '"')
-      .replace(/”/g, '"')
-      .replace(/；/g, ";")
-      .replace(/：/g, ":")
-      .replace(/？/g, "?")
-      .replace(/！/g, "!")
-      .replace(/（/g, "(")
-      .replace(/）/g, ")")
-      .replace(/【/g, "[")
-      .replace(/】/g, "]")
-      .replace(/＜/g, "<")
-      .replace(/＞/g, ">");
-  }
-
-  function textPunctuationToChinese() {
-    var input = document.getElementById('txtInput').value;
-    if (!input.trim()) {
-      alert('源字符串不能为空');
-      return;
-    }
-    var result = punctuationToChinese(input);
-    document.getElementById('txtOutput').value = result;
-    saveConfig();
-  }
-
-  function textPunctuationToEnglish() {
-    var input = document.getElementById('txtInput').value;
-    if (!input.trim()) {
-      alert('源字符串不能为空');
-      return;
-    }
-    var result = punctuationToEnglish(input);
-    document.getElementById('txtOutput').value = result;
-    saveConfig();
-  }
-
-  function clearAll() {
-    document.getElementById('txtInput').value = '';
-    document.getElementById('txtOutput').value = '';
-    saveConfig();
-  }
-
-  function copyResult() {
-    var output = document.getElementById('txtOutput');
-    output.select();
-    document.execCommand('copy');
-    alert('已复制到剪贴板');
-  }
-
-  function downloadFile() {
-    var content = document.getElementById('txtOutput').value;
-    if (!content) {
-      alert('没有内容可下载');
-      return;
-    }
-    var blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
-    var url = URL.createObjectURL(blob);
-    var a = document.createElement('a');
-    a.href = url;
-    a.download = 'punctuation-convert.txt';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  }
-
-  function saveConfig() {
-    config_punctuation_convert.input = document.getElementById('txtInput').value;
-    localStorage.setItem('config_punctuation_convert', JSON.stringify(config_punctuation_convert));
-  }
-
-  function loadConfig() {
-    var saved = localStorage.getItem('config_punctuation_convert');
-    if (saved) {
-      try {
-        config_punctuation_convert = JSON.parse(saved);
-        document.getElementById('txtInput').value = config_punctuation_convert.input || '';
-      } catch (e) {
-        console.error('Failed to load config:', e);
-      }
-    }
-  }
-
-  document.addEventListener('DOMContentLoaded', function() {
-    loadConfig();
-    
-    document.getElementById('btnToChinese').addEventListener('click', textPunctuationToChinese);
-    document.getElementById('btnToEnglish').addEventListener('click', textPunctuationToEnglish);
-    document.getElementById('btnClear').addEventListener('click', clearAll);
-    document.getElementById('btnCopy').addEventListener('click', copyResult);
-    document.getElementById('btnDownload').addEventListener('click', downloadFile);
-
-    document.getElementById('txtInput').addEventListener('input', function() {
-      saveConfig();
-    });
-  });
-</script>
+<script type="module" src="main.js"></script>
 
 </body>
 </html>

@@ -1,13 +1,9 @@
-var config_currency_convert = {
-  fromCurrency: 'KRW',
-  toCurrency: 'CNY',
-  fromAmount: '',
-  toAmount: ''
-};
+import { chineseToNumber, formatNumber } from './currency-utils.js';
 
-var currencies = {};
 
-var currencyNamesZh = {
+let currencies = {};
+
+const currencyNamesZh = {
   'AED': '阿联酋迪拉姆',
   'AFN': '阿富汗阿富汗尼',
   'ALL': '阿尔巴尼亚列克',
@@ -167,151 +163,10 @@ var currencyNamesZh = {
   'ZMW': '赞比亚克瓦查',
   'ZWL': '津巴布韦元'
 };
-var currentRate = null;
-var isConverting = false;
-var lastChangedInput = 'from';
 
-function chineseToNumber(text) {
-  if (!text || text.trim() === '') return null;
-  
-  text = text.trim().replace(/,/g, '');
-  
-  const chnUnitChar = {
-    '十': 10,
-    '百': 100,
-    '千': 1000,
-    '万': 10000,
-    '亿': 100000000,
-    '兆': 1000000000000
-  };
-  
-  // 先尝试匹配阿拉伯数字+单位的格式，例如：2000万、1.5亿等
-  const arabicWithUnitMatch = text.match(/^(\d+(?:\.\d+)?)\s*([十百千万亿兆]*)$/);
-  if (arabicWithUnitMatch) {
-    let result = parseFloat(arabicWithUnitMatch[1]);
-    const units = arabicWithUnitMatch[2];
-    for (let i = 0; i < units.length; i++) {
-      const unit = chnUnitChar[units[i]];
-      if (unit) {
-        result *= unit;
-      }
-    }
-    return result;
-  }
-  
-  // 再尝试匹配纯阿拉伯数字
-  const arabicOnlyMatch = text.match(/^(\d+(?:\.\d+)?)$/);
-  if (arabicOnlyMatch) {
-    return parseFloat(arabicOnlyMatch[1]);
-  }
-  
-  const chnNumChar = {
-    '零': 0, '0': 0, '〇': 0,
-    '一': 1, '1': 1, '壹': 1,
-    '二': 2, '2': 2, '贰': 2, '两': 2,
-    '三': 3, '3': 3, '叁': 3,
-    '四': 4, '4': 4, '肆': 4,
-    '五': 5, '5': 5, '伍': 5,
-    '六': 6, '6': 6, '陆': 6,
-    '七': 7, '7': 7, '柒': 7,
-    '八': 8, '8': 8, '捌': 8,
-    '九': 9, '9': 9, '玖': 9
-  };
-  
-  const match = text.match(/^([\d零一二三四五六七八九十百千万亿兆〇壹贰叁肆伍陆柒捌玖\s]*)([十百千万亿兆]*)$/);
-  if (!match) return null;
-  
-  const numStr = match[1].replace(/\s/g, '');
-  const endUnit = match[2];
-  
-  if (numStr === '') {
-    let result = 0;
-    for (let i = 0; i < endUnit.length; i++) {
-      const unit = chnUnitChar[endUnit[i]];
-      if (unit >= 10000) {
-        result = (result + 1) * unit;
-      } else {
-        result += unit;
-      }
-    }
-    return result || null;
-  }
-  
-  let result = 0;
-  let temp = 0;
-  let hasDigit = false;
-  let currentNum = 0;
-  let section = 0;
-  
-  for (let i = 0; i < numStr.length; i++) {
-    const char = numStr[i];
-    
-    if (chnNumChar[char] !== undefined) {
-      currentNum = chnNumChar[char];
-      hasDigit = true;
-    } else if (chnUnitChar[char]) {
-      const unit = chnUnitChar[char];
-      
-      if (unit >= 10000) {
-        section = (section + currentNum) * unit;
-        result += section;
-        section = 0;
-        currentNum = 0;
-      } else {
-        if (currentNum === 0 && !hasDigit) {
-          currentNum = 1;
-        }
-        section += currentNum * unit;
-        currentNum = 0;
-      }
-      hasDigit = false;
-    } else if (char === '.' || char === '点') {
-      result += section + currentNum;
-      section = 0;
-      currentNum = 0;
-      
-      let decimal = 0;
-      let divisor = 10;
-      for (let j = i + 1; j < numStr.length; j++) {
-        const dc = numStr[j];
-        if (chnNumChar[dc] !== undefined) {
-          decimal += chnNumChar[dc] / divisor;
-          divisor *= 10;
-        } else {
-          break;
-        }
-      }
-      result += decimal;
-      break;
-    }
-  }
-  
-  result += section + currentNum;
-  
-  if (endUnit && chnUnitChar[endUnit]) {
-    result *= chnUnitChar[endUnit];
-  }
-  
-  return result || null;
-}
+let isConverting = false;
 
-function formatNumber(num, currency) {
-  const noDecimalCurrencies = ['JPY', 'KRW', 'VND', 'IDR', 'CLP', 'ISK', 'HUF'];
-  const decimals = noDecimalCurrencies.includes(currency) ? 0 : 2;
-  
-  if (num >= 100000000) {
-    return (num / 100000000).toFixed(2) + '亿';
-  } else if (num >= 10000) {
-    return (num / 10000).toFixed(2) + '万';
-  } else {
-    return num.toLocaleString('zh-CN', {
-      minimumFractionDigits: decimals,
-      maximumFractionDigits: decimals
-    });
-  }
-}
-
-async function loadCurrencies() {
+const loadCurrencies = async () => {
   try {
     const response = await fetch('https://api.frankfurter.dev/v1/currencies');
     if (!response.ok) throw new Error('获取货币列表失败');
@@ -322,55 +177,53 @@ async function loadCurrencies() {
     showError('无法加载货币列表，请检查网络连接');
     return false;
   }
-}
+};
 
-function populateCurrencySelects() {
+const populateCurrencySelects = () => {
   const fromSelect = document.getElementById('fromCurrency');
   const toSelect = document.getElementById('toCurrency');
-  
+
   const currencyList = Object.keys(currencies).sort();
-  
+
   let html = '';
   currencyList.forEach(code => {
     const zhName = currencyNamesZh[code] || code;
-    html += '<option value="' + code + '">' + zhName + '</option>';
+    html += `<option value="${code}">${zhName}</option>`;
   });
-  
+
   fromSelect.innerHTML = html;
   toSelect.innerHTML = html;
-  
-  fromSelect.value = config_currency_convert.fromCurrency;
-  toSelect.value = config_currency_convert.toCurrency;
-  
-  updateCurrencyNames();
-}
 
-function updateCurrencyNames() {
+  fromSelect.value = 'KRW';
+  toSelect.value = 'CNY';
+
+  updateCurrencyNames();
+};
+
+const updateCurrencyNames = () => {
   const fromCurrency = document.getElementById('fromCurrency').value;
   const toCurrency = document.getElementById('toCurrency').value;
-  
+
   document.getElementById('fromCurrencyName').textContent = currencyNamesZh[fromCurrency] || currencies[fromCurrency] || '';
   document.getElementById('toCurrencyName').textContent = currencyNamesZh[toCurrency] || currencies[toCurrency] || '';
-}
+};
 
-async function convertCurrency(direction = 'from') {
+const convertCurrency = async (direction = 'from') => {
   if (isConverting) return;
-  
+
   const fromCurrency = document.getElementById('fromCurrency').value;
   const toCurrency = document.getElementById('toCurrency').value;
-  
+
   let amount;
   if (direction === 'from') {
-    const inputText = document.getElementById('fromAmount').value;
-    amount = chineseToNumber(inputText);
+    amount = chineseToNumber(document.getElementById('fromAmount').value);
   } else {
-    const inputText = document.getElementById('toAmount').value;
-    amount = chineseToNumber(inputText);
+    amount = chineseToNumber(document.getElementById('toAmount').value);
   }
 
   if (amount === null || amount <= 0) {
-    document.getElementById('fromAmount').value = config_currency_convert.fromAmount || '';
-    document.getElementById('toAmount').value = config_currency_convert.toAmount || '';
+    document.getElementById('fromAmount').value = '';
+    document.getElementById('toAmount').value = '';
     document.getElementById('rateText').textContent = '输入金额开始转换';
     hideError();
     return;
@@ -380,7 +233,7 @@ async function convertCurrency(direction = 'from') {
     document.getElementById('toAmount').value = document.getElementById('fromAmount').value;
     const fromZhName = currencyNamesZh[fromCurrency] || fromCurrency;
     const toZhName = currencyNamesZh[toCurrency] || toCurrency;
-    document.getElementById('rateText').textContent = '1 ' + fromZhName + ' = 1 ' + toZhName;
+    document.getElementById('rateText').textContent = `1 ${fromZhName} = 1 ${toZhName}`;
     return;
   }
 
@@ -389,143 +242,97 @@ async function convertCurrency(direction = 'from') {
 
   try {
     const response = await fetch(
-      'https://api.frankfurter.dev/v1/latest?amount=' + amount + '&from=' + (direction === 'from' ? fromCurrency : toCurrency) + '&to=' + (direction === 'from' ? toCurrency : fromCurrency)
+      `https://api.frankfurter.dev/v1/latest?amount=${amount}&from=${direction === 'from' ? fromCurrency : toCurrency}&to=${direction === 'from' ? toCurrency : fromCurrency}`
     );
-    
+
     if (!response.ok) throw new Error('获取汇率失败');
-    
+
     const data = await response.json();
     const result = data.rates[direction === 'from' ? toCurrency : fromCurrency];
     const rate = result / amount;
-    
+
     if (direction === 'from') {
       document.getElementById('toAmount').value = formatNumber(result, toCurrency);
-      config_currency_convert.toAmount = document.getElementById('toAmount').value;
     } else {
       document.getElementById('fromAmount').value = formatNumber(result, fromCurrency);
-      config_currency_convert.fromAmount = document.getElementById('fromAmount').value;
     }
-    
+
     const fromZhName = currencyNamesZh[fromCurrency] || fromCurrency;
-      const toZhName = currencyNamesZh[toCurrency] || toCurrency;
-      document.getElementById('rateText').textContent = 
-        '1 ' + fromZhName + ' = ' + rate.toFixed(6) + ' ' + toZhName + ' · ' + data.date;
-    
-    saveConfig();
+    const toZhName = currencyNamesZh[toCurrency] || toCurrency;
+    document.getElementById('rateText').textContent =
+      `1 ${fromZhName} = ${rate.toFixed(6)} ${toZhName} · ${data.date}`;
   } catch (error) {
     showError('转换失败: ' + error.message);
   } finally {
     isConverting = false;
   }
-}
+};
 
-function swapCurrencies() {
+const swapCurrencies = () => {
   const fromSelect = document.getElementById('fromCurrency');
   const toSelect = document.getElementById('toCurrency');
-  
+
   const tempCurrency = fromSelect.value;
   fromSelect.value = toSelect.value;
   toSelect.value = tempCurrency;
-  
+
   const tempAmount = document.getElementById('fromAmount').value;
   document.getElementById('fromAmount').value = document.getElementById('toAmount').value;
   document.getElementById('toAmount').value = tempAmount;
-  
-  config_currency_convert.fromCurrency = fromSelect.value;
-  config_currency_convert.toCurrency = toSelect.value;
-  config_currency_convert.fromAmount = document.getElementById('fromAmount').value;
-  config_currency_convert.toAmount = document.getElementById('toAmount').value;
-  
+
   updateCurrencyNames();
-  
+
   if (document.getElementById('fromAmount').value) {
     convertCurrency('from');
   }
-  
-  saveConfig();
-}
+};
 
-function showError(message) {
+const showError = (message) => {
   const errorEl = document.getElementById('errorMessage');
   errorEl.textContent = message;
   errorEl.classList.add('show');
-}
+};
 
-function hideError() {
+const hideError = () => {
   document.getElementById('errorMessage').classList.remove('show');
-}
-
-function saveConfig() {
-  config_currency_convert.fromCurrency = document.getElementById('fromCurrency').value;
-  config_currency_convert.toCurrency = document.getElementById('toCurrency').value;
-  config_currency_convert.fromAmount = document.getElementById('fromAmount').value;
-  config_currency_convert.toAmount = document.getElementById('toAmount').value;
-  localStorage.setItem('config_currency_convert', JSON.stringify(config_currency_convert));
-}
-
-function loadConfig() {
-  var saved = localStorage.getItem('config_currency_convert');
-  if (saved) {
-    try {
-      config_currency_convert = JSON.parse(saved);
-      document.getElementById('fromAmount').value = config_currency_convert.fromAmount || '';
-      document.getElementById('toAmount').value = config_currency_convert.toAmount || '';
-    } catch (e) {
-      console.error('Failed to load config:', e);
-    }
-  }
-}
+};
 
 let convertTimeout = null;
 
-function debouncedConvert(direction) {
+const debouncedConvert = (direction) => {
   if (convertTimeout) {
     clearTimeout(convertTimeout);
   }
-  convertTimeout = setTimeout(function() {
-    convertCurrency(direction);
-  }, 300);
-}
+  convertTimeout = setTimeout(() => convertCurrency(direction), 300);
+};
 
-document.addEventListener('DOMContentLoaded', async function() {
-  loadConfig();
-  
+document.addEventListener('DOMContentLoaded', async () => {
   const loaded = await loadCurrencies();
   if (loaded) {
-    document.getElementById('fromCurrency').value = config_currency_convert.fromCurrency;
-    document.getElementById('toCurrency').value = config_currency_convert.toCurrency;
+    document.getElementById('fromCurrency').value = 'KRW';
+    document.getElementById('toCurrency').value = 'CNY';
     updateCurrencyNames();
-    
-    if (config_currency_convert.fromAmount) {
-      convertCurrency('from');
-    }
   }
-  
+
   document.getElementById('btnSwap').addEventListener('click', swapCurrencies);
-  
-  document.getElementById('fromAmount').addEventListener('input', function() {
-    config_currency_convert.fromAmount = this.value;
+
+  document.getElementById('fromAmount').addEventListener('input', function () {
     debouncedConvert('from');
   });
-  
-  document.getElementById('toAmount').addEventListener('input', function() {
-    config_currency_convert.toAmount = this.value;
+
+  document.getElementById('toAmount').addEventListener('input', function () {
     debouncedConvert('to');
   });
-  
-  document.getElementById('fromCurrency').addEventListener('change', function() {
-    config_currency_convert.fromCurrency = this.value;
+
+  document.getElementById('fromCurrency').addEventListener('change', function () {
     updateCurrencyNames();
-    saveConfig();
     if (document.getElementById('fromAmount').value) {
       convertCurrency('from');
     }
   });
-  
-  document.getElementById('toCurrency').addEventListener('change', function() {
-    config_currency_convert.toCurrency = this.value;
+
+  document.getElementById('toCurrency').addEventListener('change', function () {
     updateCurrencyNames();
-    saveConfig();
     if (document.getElementById('fromAmount').value) {
       convertCurrency('from');
     }

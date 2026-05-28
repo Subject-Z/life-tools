@@ -1,53 +1,37 @@
-# 生活工具箱
+# 生活工具箱 | Life Toolbox
 
-## 架构优化说明
+---
 
-### 新架构特点
+## 中文
 
-1. **配置化工具管理**：所有工具通过 `config/tools.js` 统一管理
-2. **模块化目录结构**：每个工具独立位于 `tools/[tool-id]/` 目录
-3. **核心系统分离**：核心功能和工具功能分离，便于维护和扩展
-4. **动态渲染**：工具卡片从配置动态生成，无需修改HTML
+### 工具列表
 
-### 项目结构
+#### 1. 章节序号检测
+检测章节编号的连续性，自动识别缺失、排序错误与重复章节，支持「第X章」和行末「（序号）」两种格式。
 
-```
-life-tools/
-├── config/
-│   └── tools.js          # 工具配置文件
-├── scripts/
-│   ├── core.js           # 核心系统
-│   └── utils.js          # 工具函数
-├── styles/
-│   └── main.css          # 全局样式
-├── tools/                # 工具目录
-│   └── chapter-check/    # 章节序号检测工具
-│       ├── index.html
-│       ├── chapter-parser.js
-│       └── chapter-check.js
-└── index.html            # 首页
-```
+#### 2. 中英标点转换
+快速将文本中的标点符号在中文和英文格式之间转换，支持全角半角标点互换，包含常用标点的双向转换。
 
-### 如何添加新工具
+#### 3. 汇率转换
+实时获取全球主要货币汇率，支持100+种货币转换，数据来源于Frankfurter API，提供准确的国际汇率。
 
-1. 在 `config/tools.js` 中添加工具配置：
-```javascript
-{
-  id: 'your-tool-id',
-  name: '工具名称',
-  description: '工具描述',
-  path: 'tools/your-tool-id/index.html',
-  icon: '<svg>...</svg>',
-  category: '分类名'
-}
-```
+#### 4. TXT电子书阅读器
+加载本地TXT文件，自动识别章节，左侧目录导航，右侧阅读正文，支持章节快速切换。
 
-2. 在 `tools/` 目录下创建工具目录 `your-tool-id/`，并创建工具文件
+---
 
-3. 刷新首页即可看到新工具卡片
+## English
 
-### 已实现功能
+### Tool List
 
-- 章节序号检测工具
-- 动态工具卡片渲染
-- 统一的工具管理系统
+#### 1. Chapter Number Checker
+Detects continuity of chapter numbering, automatically identifies missing, incorrectly sorted, and duplicate chapters. Supports both "第X章" and end-of-line "(number)" formats.
+
+#### 2. Chinese-English Punctuation Converter
+Quickly converts punctuation marks in text between Chinese and English formats. Supports full-width and half-width punctuation swapping, including bidirectional conversion of common punctuation.
+
+#### 3. Currency Converter
+Real-time exchange rates for major global currencies. Supports 100+ currency conversions, data sourced from Frankfurter API, providing accurate international exchange rates.
+
+#### 4. TXT E-book Reader
+Load local TXT files with automatic chapter recognition. Features left sidebar navigation and right content reading area, supporting quick chapter switching.

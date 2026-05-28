@@ -1,6 +1,4 @@
-window.LifeTools = window.LifeTools || {};
-
-window.LifeTools.config = {
+export const toolsConfig = {
   tools: [
     {
       id: 'chapter-check',

@@ -422,6 +422,17 @@ footer {
   margin-top: 4rem;
 }
 
+footer a {
+  color: var(--text-muted);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+footer a:hover {
+  color: var(--primary, #4a9eff);
+  text-decoration: underline;
+}
+
 .page-main {
   padding: 1rem 0;
   min-height: calc(100vh - 140px);
