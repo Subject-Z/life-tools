@@ -165,6 +165,7 @@ const currencyNamesZh = {
 };
 
 let isConverting = false;
+let isUpdating = false;
 
 const loadCurrencies = async () => {
   try {
@@ -222,15 +223,26 @@ const convertCurrency = async (direction = 'from') => {
   }
 
   if (amount === null || amount <= 0) {
-    document.getElementById('fromAmount').value = '';
-    document.getElementById('toAmount').value = '';
+    if (direction === 'from') {
+      const rawValue = document.getElementById('fromAmount').value.trim();
+      if (!rawValue) {
+        document.getElementById('toAmount').value = '';
+      }
+    } else {
+      const rawValue = document.getElementById('toAmount').value.trim();
+      if (!rawValue) {
+        document.getElementById('fromAmount').value = '';
+      }
+    }
     document.getElementById('rateText').textContent = '输入金额开始转换';
     hideError();
     return;
   }
 
   if (fromCurrency === toCurrency) {
+    isUpdating = true;
     document.getElementById('toAmount').value = document.getElementById('fromAmount').value;
+    isUpdating = false;
     const fromZhName = currencyNamesZh[fromCurrency] || fromCurrency;
     const toZhName = currencyNamesZh[toCurrency] || toCurrency;
     document.getElementById('rateText').textContent = `1 ${fromZhName} = 1 ${toZhName}`;
@@ -251,11 +263,13 @@ const convertCurrency = async (direction = 'from') => {
     const result = data.rates[direction === 'from' ? toCurrency : fromCurrency];
     const rate = result / amount;
 
+    isUpdating = true;
     if (direction === 'from') {
       document.getElementById('toAmount').value = formatNumber(result, toCurrency);
     } else {
       document.getElementById('fromAmount').value = formatNumber(result, fromCurrency);
     }
+    isUpdating = false;
 
     const fromZhName = currencyNamesZh[fromCurrency] || fromCurrency;
     const toZhName = currencyNamesZh[toCurrency] || toCurrency;
@@ -276,9 +290,11 @@ const swapCurrencies = () => {
   fromSelect.value = toSelect.value;
   toSelect.value = tempCurrency;
 
+  isUpdating = true;
   const tempAmount = document.getElementById('fromAmount').value;
   document.getElementById('fromAmount').value = document.getElementById('toAmount').value;
   document.getElementById('toAmount').value = tempAmount;
+  isUpdating = false;
 
   updateCurrencyNames();
 
@@ -317,10 +333,12 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('btnSwap').addEventListener('click', swapCurrencies);
 
   document.getElementById('fromAmount').addEventListener('input', function () {
+    if (isUpdating) return;
     debouncedConvert('from');
   });
 
   document.getElementById('toAmount').addEventListener('input', function () {
+    if (isUpdating) return;
     debouncedConvert('to');
   });
 

@@ -31,7 +31,20 @@ document.addEventListener('DOMContentLoaded', function() {
 
   const BOOKS_KEY = 'txtReader_books';
   const PROGRESS_KEY = 'txtReader_progress';
-  const CONTENT_KEY = 'txtReader_content';
+  const DB_NAME = 'txtReaderDB';
+  const DB_VERSION = 1;
+  const STORE_NAME = 'contents';
+
+  function openDB() {
+    return new Promise((resolve, reject) => {
+      const request = indexedDB.open(DB_NAME, DB_VERSION);
+      request.onupgradeneeded = () => {
+        request.result.createObjectStore(STORE_NAME);
+      };
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+  }
 
   const savedFontSize = localStorage.getItem('readerFontSize');
   if (savedFontSize) {
@@ -62,29 +75,41 @@ document.addEventListener('DOMContentLoaded', function() {
     localStorage.setItem(PROGRESS_KEY, JSON.stringify(progress));
   }
 
-  function getBookContent(bookId) {
+  async function getBookContent(bookId) {
     try {
-      const contents = JSON.parse(localStorage.getItem(CONTENT_KEY)) || {};
-      return contents[bookId] || null;
+      const db = await openDB();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(STORE_NAME, 'readonly');
+        const req = tx.objectStore(STORE_NAME).get(bookId);
+        req.onsuccess = () => resolve(req.result || null);
+        req.onerror = () => reject(req.error);
+      });
     } catch { return null; }
   }
 
-  function saveBookContent(bookId, content) {
-    let contents;
-    try {
-      contents = JSON.parse(localStorage.getItem(CONTENT_KEY)) || {};
-    } catch { contents = {}; }
-    contents[bookId] = content;
-    localStorage.setItem(CONTENT_KEY, JSON.stringify(contents));
+  async function saveBookContent(bookId, content) {
+    const db = await openDB();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(STORE_NAME, 'readwrite');
+      const req = tx.objectStore(STORE_NAME).put(content, bookId);
+      req.onsuccess = () => resolve();
+      req.onerror = () => {
+        if (req.error.name === 'QuotaExceededError') {
+          alert('存储空间不足，请删除一些书籍后再试。');
+        }
+        reject(req.error);
+      };
+    });
   }
 
-  function removeBookContent(bookId) {
-    let contents;
-    try {
-      contents = JSON.parse(localStorage.getItem(CONTENT_KEY)) || {};
-    } catch { contents = {}; }
-    delete contents[bookId];
-    localStorage.setItem(CONTENT_KEY, JSON.stringify(contents));
+  async function removeBookContent(bookId) {
+    const db = await openDB();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(STORE_NAME, 'readwrite');
+      const req = tx.objectStore(STORE_NAME).delete(bookId);
+      req.onsuccess = () => resolve();
+      req.onerror = () => reject(req.error);
+    });
   }
 
   function removeBookProgress(bookId) {
@@ -156,7 +181,7 @@ document.addEventListener('DOMContentLoaded', function() {
     return div.innerHTML;
   }
 
-  function deleteBook(bookId) {
+  async function deleteBook(bookId) {
     const books = getBooks();
     const book = books.find(b => b.id === bookId);
     if (!book) return;
@@ -166,13 +191,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
     const updatedBooks = books.filter(b => b.id !== bookId);
     saveBooks(updatedBooks);
-    removeBookContent(bookId);
+    await removeBookContent(bookId);
     removeBookProgress(bookId);
     renderBookshelf();
   }
 
-  function openBook(bookId) {
-    const content = getBookContent(bookId);
+  async function openBook(bookId) {
+    const content = await getBookContent(bookId);
     if (!content) {
       alert('书籍内容已丢失，请重新添加。');
       const books = getBooks().filter(b => b.id !== bookId);
@@ -183,6 +208,13 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     currentBookId = bookId;
+
+    const books = getBooks();
+    const book = books.find(b => b.id === bookId);
+    if (book) {
+      document.title = book.name + ' — TXT电子书阅读器';
+    }
+
     parseChapters(content);
 
     const progress = getProgress();
@@ -201,6 +233,8 @@ document.addEventListener('DOMContentLoaded', function() {
     if (currentBookId !== null && currentChapterIndex !== undefined) {
       saveProgress(currentBookId, currentChapterIndex);
     }
+
+    document.title = 'TXT电子书阅读器 — 生活工具箱';
 
     currentBookId = null;
     chapters = [];
@@ -236,7 +270,7 @@ document.addEventListener('DOMContentLoaded', function() {
       }
 
       const reader = new FileReader();
-      reader.onload = function(ev) {
+      reader.onload = async function(ev) {
         const content = ev.target.result;
         const tempChapters = parseChaptersFromContent(content);
         const bookId = generateBookId(file.name, file.size, file.lastModified);
@@ -252,7 +286,19 @@ document.addEventListener('DOMContentLoaded', function() {
             addedAt: Date.now()
           });
           saveBooks(books);
-          saveBookContent(bookId, content);
+          try {
+            await saveBookContent(bookId, content);
+          } catch {
+            books.pop();
+            saveBooks(books);
+            alert('《' + file.name.replace('.txt', '') + '》存储失败，空间不足。');
+            processed++;
+            if (processed === total) {
+              renderBookshelf();
+              fileInput.value = '';
+            }
+            return;
+          }
         }
 
         processed++;
@@ -350,6 +396,23 @@ document.addEventListener('DOMContentLoaded', function() {
   nextChapter.addEventListener('click', () => {
     if (currentChapterIndex < chapters.length - 1) {
       showChapter(currentChapterIndex + 1);
+    }
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (readerContainer.style.display === 'none') return;
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+    if (e.key === 'ArrowLeft') {
+      e.preventDefault();
+      if (currentChapterIndex > 0) {
+        showChapter(currentChapterIndex - 1);
+      }
+    } else if (e.key === 'ArrowRight') {
+      e.preventDefault();
+      if (currentChapterIndex < chapters.length - 1) {
+        showChapter(currentChapterIndex + 1);
+      }
     }
   });
 

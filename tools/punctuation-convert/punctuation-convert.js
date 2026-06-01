@@ -38,7 +38,21 @@ const CN_TO_EN = new Map([
 
 export const punctuationToChinese = (text) => {
   if (!text) return '';
-  return convert(text, EN_TO_CN);
+  let result = '';
+  let openDouble = false;
+  let openSingle = false;
+  for (const ch of text) {
+    if (ch === '"') {
+      result += openDouble ? '\u201D' : '\u201C';
+      openDouble = !openDouble;
+    } else if (ch === "'") {
+      result += openSingle ? '\u2019' : '\u2018';
+      openSingle = !openSingle;
+    } else {
+      result += EN_TO_CN.has(ch) ? EN_TO_CN.get(ch) : ch;
+    }
+  }
+  return result;
 };
 
 export const punctuationToEnglish = (text) => {
@@ -63,13 +77,29 @@ function convert(text, map) {
   return parts.join('');
 }
 
+function convertToChinese(text) {
+  let result = '';
+  let openDouble = false;
+  let openSingle = false;
+  for (const ch of text) {
+    if (ch === '"') {
+      result += openDouble ? '\u201D' : '\u201C';
+      openDouble = !openDouble;
+    } else if (ch === "'") {
+      result += openSingle ? '\u2019' : '\u2018';
+      openSingle = !openSingle;
+    } else {
+      result += EN_TO_CN.has(ch) ? EN_TO_CN.get(ch) : ch;
+    }
+  }
+  return result;
+}
+
 export function createWorkerCode() {
   return `
 const EN_TO_CN = new Map([
   [',', '\\uFF0C'],
   ['.', '\\u3002'],
-  ["'", '\\u2019'],
-  ['"', '\\u201D'],
   [';', '\\uFF1B'],
   [':', '\\uFF1A'],
   ['?', '\\uFF1F'],
@@ -103,27 +133,35 @@ const CN_TO_EN = new Map([
   ['\\uFF1E', '>'],
 ]);
 
-function convert(text, map) {
-  const len = text.length;
-  const CHUNK = 500000;
-  const parts = [];
-  for (let i = 0; i < len; i += CHUNK) {
-    const end = Math.min(i + CHUNK, len);
-    const chunk = text.substring(i, end);
-    let result = '';
-    for (let j = 0; j < chunk.length; j++) {
-      const ch = chunk[j];
-      result += map.has(ch) ? map.get(ch) : ch;
+function convertToChinese(text) {
+  let result = '';
+  let openDouble = false;
+  let openSingle = false;
+  for (const ch of text) {
+    if (ch === '"') {
+      result += openDouble ? '\\u201D' : '\\u201C';
+      openDouble = !openDouble;
+    } else if (ch === "'") {
+      result += openSingle ? '\\u2019' : '\\u2018';
+      openSingle = !openSingle;
+    } else {
+      result += EN_TO_CN.has(ch) ? EN_TO_CN.get(ch) : ch;
     }
-    parts.push(result);
   }
-  return parts.join('');
+  return result;
+}
+
+function convertToEnglish(text) {
+  const result = [];
+  for (const ch of text) {
+    result.push(CN_TO_EN.has(ch) ? CN_TO_EN.get(ch) : ch);
+  }
+  return result.join('');
 }
 
 self.onmessage = function(e) {
   const { text, direction } = e.data;
-  const map = direction === 'toChinese' ? EN_TO_CN : CN_TO_EN;
-  const result = convert(text, map);
+  const result = direction === 'toChinese' ? convertToChinese(text) : convertToEnglish(text);
   self.postMessage({ type: 'done', result });
 };
 `;
