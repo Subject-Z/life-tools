@@ -1,17 +1,17 @@
 @echo off
 cd /d "%~dp0"
 
-:: é€šè¿‡ PowerShell èŽ·å–å½“å‰æœˆ/æ—¥ï¼Œæ ¼å¼å¦‚ 06/01
+:: Í¨¹ý PowerShell »ñÈ¡µ±Ç°ÔÂ/ÈÕ£¬¸ñÊ½Èç 06/01
 for /f %%i in ('powershell -Command "Get-Date -Format 'MM/dd'"') do set today=%%i
 
-:: æž„é€ å®Œæ•´çš„æäº¤ä¿¡æ¯
-set commit_msg=%today%ï¼šæˆ‘ä¸çŸ¥é“æ›´æ–°äº†ä»€ä¹ˆ
+:: ¹¹ÔìÍêÕûµÄÌá½»ÐÅÏ¢
+set commit_msg=%today%£ºÎÒ²»ÖªµÀ¸üÐÂÁËÊ²Ã´
 
-:: æ‰§è¡Œ Git æ“ä½œ
+:: Ö´ÐÐ Git ²Ù×÷
 git add .
 git commit -m "%commit_msg%"
 git push origin main
 
-:: æ˜¾ç¤ºæ‰§è¡Œç»“æžœï¼ŒæŒ‰ä»»æ„é”®å…³é—­çª—å£
-echo æ“ä½œå®Œæˆï¼ŒæŒ‰ä»»æ„é”®é€€å‡º...
+:: ÏÔÊ¾Ö´ÐÐ½á¹û£¬°´ÈÎÒâ¼ü¹Ø±Õ´°¿Ú
+echo ²Ù×÷Íê³É£¬°´ÈÎÒâ¼üÍË³ö...
 pause > nul

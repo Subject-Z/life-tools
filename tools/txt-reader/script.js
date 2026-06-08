@@ -346,6 +346,12 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     positionSidebar();
     sidebar.classList.remove('hidden');
+    requestAnimationFrame(() => {
+      const activeItem = chapterList.querySelector('.chapter-item.active');
+      if (activeItem) {
+        activeItem.scrollIntoView({ block: 'center', behavior: 'instant' });
+      }
+    });
   });
 
   closeSidebar.addEventListener('click', (e) => {
@@ -427,6 +433,7 @@ document.addEventListener('DOMContentLoaded', function() {
       const item = document.createElement('div');
       item.className = 'chapter-item';
       item.textContent = chapter.title;
+      item.dataset.index = index;
       item.addEventListener('click', () => {
         showChapter(index);
         sidebar.classList.add('hidden');
