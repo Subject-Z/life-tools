@@ -164,8 +164,48 @@ const currencyNamesZh = {
   'ZWL': '津巴布韦元'
 };
 
-let isConverting = false;
 let isUpdating = false;
+
+// 汇率缓存（frankfurter 每日更新一次，会话内缓存即可大幅减少网络请求）
+const RATE_CACHE_TTL = 30 * 60 * 1000;
+const rateCache = new Map(); // key: 'FROM_TO' -> { rate, date, timestamp }
+let fetchController = null;
+
+const getCachedRate = (from, to) => {
+  const cached = rateCache.get(`${from}_${to}`);
+  if (cached && Date.now() - cached.timestamp < RATE_CACHE_TTL) {
+    return cached;
+  }
+  // 反向汇率互为倒数，交换货币时无需再次请求
+  const reverse = rateCache.get(`${to}_${from}`);
+  if (reverse && Date.now() - reverse.timestamp < RATE_CACHE_TTL) {
+    return { rate: 1 / reverse.rate, date: reverse.date, timestamp: reverse.timestamp };
+  }
+  return null;
+};
+
+const fetchRate = async (from, to) => {
+  const cached = getCachedRate(from, to);
+  if (cached) return cached;
+
+  // 取消上一个未完成的请求，避免过期结果覆盖新输入
+  if (fetchController) fetchController.abort();
+  fetchController = new AbortController();
+
+  const response = await fetch(
+    `https://api.frankfurter.dev/v1/latest?from=${from}&to=${to}`,
+    { signal: fetchController.signal }
+  );
+  if (!response.ok) throw new Error('获取汇率失败');
+
+  const data = await response.json();
+  const rate = data.rates[to];
+  if (!rate) throw new Error('获取汇率失败');
+
+  const entry = { rate, date: data.date, timestamp: Date.now() };
+  rateCache.set(`${from}_${to}`, entry);
+  return entry;
+};
 
 const loadCurrencies = async () => {
   try {
@@ -186,11 +226,9 @@ const populateCurrencySelects = () => {
 
   const currencyList = Object.keys(currencies).sort();
 
-  let html = '';
-  currencyList.forEach(code => {
-    const zhName = currencyNamesZh[code] || code;
-    html += `<option value="${code}">${zhName}</option>`;
-  });
+  const html = currencyList
+    .map(code => `<option value="${code}">${currencyNamesZh[code] || code}</option>`)
+    .join('');
 
   fromSelect.innerHTML = html;
   toSelect.innerHTML = html;
@@ -210,8 +248,6 @@ const updateCurrencyNames = () => {
 };
 
 const convertCurrency = async (direction = 'from') => {
-  if (isConverting) return;
-
   const fromCurrency = document.getElementById('fromCurrency').value;
   const toCurrency = document.getElementById('toCurrency').value;
 
@@ -250,18 +286,11 @@ const convertCurrency = async (direction = 'from') => {
   }
 
   hideError();
-  isConverting = true;
 
   try {
-    const response = await fetch(
-      `https://api.frankfurter.dev/v1/latest?amount=${amount}&from=${direction === 'from' ? fromCurrency : toCurrency}&to=${direction === 'from' ? toCurrency : fromCurrency}`
-    );
-
-    if (!response.ok) throw new Error('获取汇率失败');
-
-    const data = await response.json();
-    const result = data.rates[direction === 'from' ? toCurrency : fromCurrency];
-    const rate = result / amount;
+    // 只获取汇率（与金额无关，可缓存），结果在本地计算，缓存命中时转换零延迟
+    const { rate, date } = await fetchRate(fromCurrency, toCurrency);
+    const result = direction === 'from' ? amount * rate : amount / rate;
 
     isUpdating = true;
     if (direction === 'from') {
@@ -274,11 +303,10 @@ const convertCurrency = async (direction = 'from') => {
     const fromZhName = currencyNamesZh[fromCurrency] || fromCurrency;
     const toZhName = currencyNamesZh[toCurrency] || toCurrency;
     document.getElementById('rateText').textContent =
-      `1 ${fromZhName} = ${rate.toFixed(6)} ${toZhName} · ${data.date}`;
+      `1 ${fromZhName} = ${rate.toFixed(6)} ${toZhName} · ${date}`;
   } catch (error) {
+    if (error.name === 'AbortError') return;
     showError('转换失败: ' + error.message);
-  } finally {
-    isConverting = false;
   }
 };
 
@@ -319,7 +347,11 @@ const debouncedConvert = (direction) => {
   if (convertTimeout) {
     clearTimeout(convertTimeout);
   }
-  convertTimeout = setTimeout(() => convertCurrency(direction), 300);
+  // 汇率已缓存时立即转换（零延迟），否则防抖等待输入停止再请求
+  const fromCurrency = document.getElementById('fromCurrency').value;
+  const toCurrency = document.getElementById('toCurrency').value;
+  const delay = getCachedRate(fromCurrency, toCurrency) ? 0 : 300;
+  convertTimeout = setTimeout(() => convertCurrency(direction), delay);
 };
 
 document.addEventListener('DOMContentLoaded', async () => {
