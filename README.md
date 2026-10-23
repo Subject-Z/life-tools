@@ -15,8 +15,8 @@
 #### 3. 汇率转换
 实时获取全球主要货币汇率，支持100+种货币转换，数据来源于Frankfurter API，提供准确的国际汇率。
 
-#### 4. TXT电子书阅读器
-加载本地TXT文件，自动识别章节，左侧目录导航，右侧阅读正文，支持章节快速切换。
+#### 4. 电子书阅读器
+加载本地 TXT / EPUB 电子书，自动识别章节目录，支持书架管理、字体调节与阅读进度记忆。
 
 ---
 
@@ -33,5 +33,5 @@ Quickly converts punctuation marks in text between Chinese and English formats. 
 #### 3. Currency Converter
 Real-time exchange rates for major global currencies. Supports 100+ currency conversions, data sourced from Frankfurter API, providing accurate international exchange rates.
 
-#### 4. TXT E-book Reader
-Load local TXT files with automatic chapter recognition. Features left sidebar navigation and right content reading area, supporting quick chapter switching.
+#### 4. E-book Reader
+Load local TXT / EPUB e-books with automatic chapter and table-of-contents recognition. Features bookshelf management, font size adjustment, and reading progress memory.

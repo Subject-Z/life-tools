@@ -1,3 +1,5 @@
+import { parseEpub, supportsEpub } from './epub.js';
+
 document.addEventListener('DOMContentLoaded', function() {
   const bookshelfView = document.getElementById('bookshelfView');
   const bookList = document.getElementById('bookList');
@@ -28,6 +30,9 @@ document.addEventListener('DOMContentLoaded', function() {
   let currentChapterIndex = 0;
   let currentFontSize = 16;
   let currentBookId = null;
+  let bookFormat = 'txt';
+  let epubBook = null;
+  let chapterRenderToken = 0;
 
   const BOOKS_KEY = 'txtReader_books';
   const PROGRESS_KEY = 'txtReader_progress';
@@ -142,12 +147,14 @@ document.addEventListener('DOMContentLoaded', function() {
       const progressText = chapterProgress !== undefined
         ? '已读至第 ' + (chapterProgress + 1) + ' 章'
         : '未阅读';
+      const fmt = book.format === 'epub' ? 'EPUB' : 'TXT';
 
       card.innerHTML =
         '<div class="book-card-icon">📖</div>' +
         '<div class="book-card-info">' +
           '<div class="book-card-name" title="' + escapeHtml(book.name) + '">' + escapeHtml(book.name) + '</div>' +
           '<div class="book-card-meta">' +
+            '<span class="book-card-format format-' + fmt.toLowerCase() + '">' + fmt + '</span>' +
             '<span class="book-card-chapters">' + book.chapterCount + ' 章</span>' +
             '<span class="book-card-progress">' + progressText + '</span>' +
           '</div>' +
@@ -197,25 +204,47 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   async function openBook(bookId) {
+    const books = getBooks();
+    const book = books.find(b => b.id === bookId);
+    bookFormat = book && book.format === 'epub' ? 'epub' : 'txt';
+
     const content = await getBookContent(bookId);
     if (!content) {
       alert('书籍内容已丢失，请重新添加。');
-      const books = getBooks().filter(b => b.id !== bookId);
-      saveBooks(books);
+      const updatedBooks = books.filter(b => b.id !== bookId);
+      saveBooks(updatedBooks);
       removeBookProgress(bookId);
       renderBookshelf();
       return;
     }
 
-    currentBookId = bookId;
-
-    const books = getBooks();
-    const book = books.find(b => b.id === bookId);
     if (book) {
-      document.title = book.name + ' — TXT电子书阅读器';
+      document.title = book.name + ' — 电子书阅读器';
     }
 
-    parseChapters(content);
+    currentBookId = bookId;
+
+    if (bookFormat === 'epub') {
+      if (!(content instanceof ArrayBuffer)) {
+        alert('书籍数据解析失败，文件可能已损坏。');
+        bookFormat = 'txt';
+        currentBookId = null;
+        return;
+      }
+      try {
+        epubBook = await parseEpub(content);
+        chapters = epubBook.buildChapterList();
+        renderChapterList();
+      } catch (err) {
+        alert('书籍数据解析失败，文件可能已损坏：' + err.message);
+        epubBook = null;
+        bookFormat = 'txt';
+        currentBookId = null;
+        return;
+      }
+    } else {
+      parseChapters(content);
+    }
 
     const progress = getProgress();
     const savedChapter = progress[bookId] || 0;
@@ -230,11 +259,18 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   function showBookshelf() {
+    if (epubBook) {
+      epubBook.cleanup();
+      epubBook = null;
+    }
+    bookFormat = 'txt';
+    chapterRenderToken++;
+
     if (currentBookId !== null && currentChapterIndex !== undefined) {
       saveProgress(currentBookId, currentChapterIndex);
     }
 
-    document.title = 'TXT电子书阅读器 — 生活工具箱';
+    document.title = '电子书阅读器 — 生活工具箱';
 
     currentBookId = null;
     chapters = [];
@@ -252,6 +288,92 @@ document.addEventListener('DOMContentLoaded', function() {
 
   addBookBtn.addEventListener('click', () => fileInput.click());
 
+  function getFileFormat(file) {
+    if (/\.txt$/i.test(file.name)) return 'txt';
+    if (/\.epub$/i.test(file.name)) return 'epub';
+    return null;
+  }
+
+  function readFileAs(file, type) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = ev => resolve(ev.target.result);
+      reader.onerror = () => reject(reader.error);
+      if (type === 'arraybuffer') reader.readAsArrayBuffer(file);
+      else reader.readAsText(file, 'UTF-8');
+    });
+  }
+
+  async function importTxt(file, onDone) {
+    const content = await readFileAs(file, 'text');
+    const tempChapters = parseChaptersFromContent(content);
+    const bookId = generateBookId(file.name, file.size, file.lastModified);
+
+    const books = getBooks();
+    const existing = books.find(b => b.id === bookId);
+
+    if (!existing) {
+      books.push({
+        id: bookId,
+        name: file.name.replace(/\.txt$/i, ''),
+        chapterCount: tempChapters.length,
+        addedAt: Date.now(),
+        format: 'txt'
+      });
+      saveBooks(books);
+      try {
+        await saveBookContent(bookId, content);
+      } catch {
+        books.pop();
+        saveBooks(books);
+        alert('《' + file.name.replace(/\.txt$/i, '') + '》存储失败，空间不足。');
+      }
+    }
+    onDone();
+  }
+
+  async function importEpub(file, onDone) {
+    if (!supportsEpub()) {
+      alert('当前浏览器不支持 EPUB 解压，请使用较新版本的 Chrome / Edge / Firefox / Safari。');
+      onDone();
+      return;
+    }
+    const buffer = await readFileAs(file, 'arraybuffer');
+    let parsed;
+    try {
+      parsed = await parseEpub(buffer);
+    } catch (err) {
+      alert('《' + file.name + '》解析失败：' + err.message);
+      onDone();
+      return;
+    }
+    const chapterCount = parsed.buildChapterList().length;
+    const bookId = generateBookId(file.name, file.size, file.lastModified);
+
+    const books = getBooks();
+    const existing = books.find(b => b.id === bookId);
+
+    if (!existing) {
+      books.push({
+        id: bookId,
+        name: parsed.title || file.name.replace(/\.epub$/i, ''),
+        chapterCount,
+        addedAt: Date.now(),
+        format: 'epub'
+      });
+      saveBooks(books);
+      try {
+        await saveBookContent(bookId, buffer);
+      } catch {
+        books.pop();
+        saveBooks(books);
+        alert('《' + file.name + '》存储失败，空间不足。');
+      }
+    }
+    parsed.cleanup();
+    onDone();
+  }
+
   fileInput.addEventListener('change', (e) => {
     const files = Array.from(e.target.files);
     if (files.length === 0) return;
@@ -259,55 +381,21 @@ document.addEventListener('DOMContentLoaded', function() {
     let processed = 0;
     const total = files.length;
 
-    files.forEach(file => {
-      if (!file.name.endsWith('.txt')) {
-        processed++;
-        if (processed === total) {
-          renderBookshelf();
-          fileInput.value = '';
-        }
-        return;
+    const finish = () => {
+      processed++;
+      if (processed === total) {
+        renderBookshelf();
+        fileInput.value = '';
       }
+    };
 
-      const reader = new FileReader();
-      reader.onload = async function(ev) {
-        const content = ev.target.result;
-        const tempChapters = parseChaptersFromContent(content);
-        const bookId = generateBookId(file.name, file.size, file.lastModified);
-
-        const books = getBooks();
-        const existing = books.find(b => b.id === bookId);
-
-        if (!existing) {
-          books.push({
-            id: bookId,
-            name: file.name.replace('.txt', ''),
-            chapterCount: tempChapters.length,
-            addedAt: Date.now()
-          });
-          saveBooks(books);
-          try {
-            await saveBookContent(bookId, content);
-          } catch {
-            books.pop();
-            saveBooks(books);
-            alert('《' + file.name.replace('.txt', '') + '》存储失败，空间不足。');
-            processed++;
-            if (processed === total) {
-              renderBookshelf();
-              fileInput.value = '';
-            }
-            return;
-          }
-        }
-
-        processed++;
-        if (processed === total) {
-          renderBookshelf();
-          fileInput.value = '';
-        }
-      };
-      reader.readAsText(file, 'UTF-8');
+    files.forEach(file => {
+      const format = getFileFormat(file);
+      let task;
+      if (format === 'txt') task = importTxt(file, finish);
+      else if (format === 'epub') task = importEpub(file, finish);
+      else { finish(); return; }
+      task.catch(() => finish());
     });
   });
 
@@ -422,6 +510,30 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   });
 
+  // EPUB 正文内链接：内部章节跳转 / 页内定位
+  contentBody.addEventListener('click', (e) => {
+    if (bookFormat !== 'epub') return;
+    const a = e.target.closest('a[data-epub-chapter], a[data-epub-frag]');
+    if (!a) return;
+    e.preventDefault();
+    const idxAttr = a.getAttribute('data-epub-chapter');
+    const frag = a.getAttribute('data-epub-frag');
+    const scrollToFragment = () => {
+      if (!frag) return;
+      let el = null;
+      try { el = contentBody.querySelector('#' + CSS.escape(frag)); } catch { el = null; }
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    };
+    if (idxAttr !== null) {
+      const idx = parseInt(idxAttr, 10);
+      if (!isNaN(idx)) {
+        showChapter(idx).then(scrollToFragment);
+        return;
+      }
+    }
+    scrollToFragment();
+  });
+
   function parseChapters(content) {
     chapters = parseChaptersFromContent(content);
     renderChapterList();
@@ -469,19 +581,46 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   });
 
-  function showChapter(index) {
+  async function showChapter(index) {
     if (index < 0 || index >= chapters.length) return;
 
+    const token = ++chapterRenderToken;
     currentChapterIndex = index;
     const chapter = chapters[index];
     contentTitle.textContent = chapter.title;
 
-    contentBody.innerHTML = '';
-    chapter.content.forEach(line => {
-      const p = document.createElement('p');
-      p.textContent = line;
-      contentBody.appendChild(p);
-    });
+    if (bookFormat === 'epub' && epubBook) {
+      contentBody.innerHTML = '<p>加载中…</p>';
+      let out = null;
+      try {
+        out = await epubBook.getChapter(chapter.href);
+      } catch {
+        out = null;
+      }
+      if (token !== chapterRenderToken) return; // 过期渲染丢弃
+      if (out) {
+        contentBody.innerHTML = '';
+        // 章节根节点是 <body> 元素，展开子节点后插入，
+        // 避免页面全局 body 样式（背景色等）作用到 EPUB 正文区域
+        contentBody.append(...out.element.childNodes);
+        if (out.title && chapter.autoTitle) {
+          chapter.title = out.title;
+          chapter.autoTitle = false;
+          contentTitle.textContent = out.title;
+          const item = chapterList.children[index];
+          if (item) item.textContent = out.title;
+        }
+      } else {
+        contentBody.innerHTML = '<p>本章内容加载失败。</p>';
+      }
+    } else {
+      contentBody.innerHTML = '';
+      chapter.content.forEach(line => {
+        const p = document.createElement('p');
+        p.textContent = line;
+        contentBody.appendChild(p);
+      });
+    }
 
     contentBody.style.fontSize = currentFontSize + 'px';
 

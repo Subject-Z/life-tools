@@ -5,7 +5,7 @@ cd /d "%~dp0"
 for /f %%i in ('powershell -Command "Get-Date -Format 'MM/dd'"') do set today=%%i
 
 :: 构造完整的提交信息
-set commit_msg=%today%：我不知道更新了什么
+set commit_msg=%today%：这个人很懒，什么都没有留下
 
 :: 执行 Git 操作
 git add .

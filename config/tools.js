@@ -25,10 +25,10 @@ export const toolsConfig = {
       category: '金融工具'
     },
     {
-      id: 'txt-reader',
-      name: 'TXT电子书阅读器',
-      description: '加载本地TXT文件，自动识别章节，左侧目录导航，右侧阅读正文，支持章节快速切换。',
-      path: 'tools/txt-reader/index.html',
+      id: 'ebook-reader',
+      name: '电子书阅读器',
+      description: '加载本地 TXT / EPUB 电子书，自动识别章节目录，支持书架管理、字体调节与阅读进度记忆。',
+      path: 'tools/ebook-reader/index.html',
       icon: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>',
       category: '文本处理'
     }
