@@ -25,6 +25,8 @@ document.addEventListener('DOMContentLoaded', function() {
   const nextChapter = document.getElementById('nextChapter');
   const chapterInfo = document.getElementById('chapterInfo');
   const backToBookshelf = document.getElementById('backToBookshelf');
+  const readingProgress = document.getElementById('readingProgress');
+  const readingProgressPercent = document.getElementById('readingProgressPercent');
 
   let chapters = [];
   let currentChapterIndex = 0;
@@ -33,6 +35,12 @@ document.addEventListener('DOMContentLoaded', function() {
   let bookFormat = 'txt';
   let epubBook = null;
   let chapterRenderToken = 0;
+  let chapterReady = false;
+  let progressFrameId = 0;
+  let lastProgressPercent = -1;
+
+  // 章节正文顶部与视口顶部留出的间距，进度以此刻度为 0%
+  const CHAPTER_TOP_OFFSET = 16;
 
   const BOOKS_KEY = 'txtReader_books';
   const PROGRESS_KEY = 'txtReader_progress';
@@ -249,13 +257,18 @@ document.addEventListener('DOMContentLoaded', function() {
     const progress = getProgress();
     const savedChapter = progress[bookId] || 0;
 
-    if (chapters.length > 0) {
-      showChapter(Math.min(savedChapter, chapters.length - 1));
-    }
-
     bookshelfView.style.display = 'none';
     readerContainer.style.display = 'flex';
+
+    chapterReady = false;
+    readingProgress.style.display = chapters.length > 0 ? '' : 'none';
+    resetReadingProgress();
     positionFixedButtons();
+
+    if (chapters.length > 0) {
+      scrollToChapterTop();
+      showChapter(Math.min(savedChapter, chapters.length - 1));
+    }
   }
 
   function showBookshelf() {
@@ -275,6 +288,7 @@ document.addEventListener('DOMContentLoaded', function() {
     currentBookId = null;
     chapters = [];
     currentChapterIndex = 0;
+    chapterReady = false;
     contentBody.innerHTML = '';
     contentTitle.textContent = '选择章节开始阅读';
 
@@ -282,6 +296,9 @@ document.addEventListener('DOMContentLoaded', function() {
     bookshelfView.style.display = 'block';
     sidebar.classList.add('hidden');
     settingsPanel.classList.add('hidden');
+    resetReadingProgress();
+
+    window.scrollTo({ top: 0, behavior: 'instant' });
 
     renderBookshelf();
   }
@@ -467,6 +484,7 @@ document.addEventListener('DOMContentLoaded', function() {
     fontSizeValue.textContent = currentFontSize;
     contentBody.style.fontSize = currentFontSize + 'px';
     localStorage.setItem('readerFontSize', currentFontSize);
+    scheduleProgressUpdate();
   }
 
   fontSizeDecrease.addEventListener('click', () => updateFontSize(currentFontSize - 1));
@@ -569,9 +587,77 @@ document.addEventListener('DOMContentLoaded', function() {
     settingsPanel.style.right = (window.innerWidth - panelRect.right) + 'px';
   }
 
+  function isReaderOpen() {
+    return readerContainer.style.display !== 'none';
+  }
+
+  // 章节内进度：正文顶部对齐视口顶部记为 0%，正文底部对齐视口底部记为 100%
+  function computeChapterProgress() {
+    if (!isReaderOpen() || !chapterReady || currentBookId === null) return 0;
+
+    const rect = contentBody.getBoundingClientRect();
+    const bodyHeight = rect.height;
+    if (bodyHeight < 1) return 0;
+
+    const viewportHeight = window.innerHeight;
+    const scrollTop = window.pageYOffset || document.documentElement.scrollTop || 0;
+    const bodyTop = rect.top + scrollTop;
+    const start = bodyTop - CHAPTER_TOP_OFFSET;
+    const end = bodyTop + bodyHeight - viewportHeight;
+
+    // 不足一屏的短章：从章节起点滚动到正文完整可见时记为 100%；
+    // 若章节起点处正文已完整可见，则直接是 100%
+    if (end - start <= 4) {
+      const panelTop = contentPanel.getBoundingClientRect().top + scrollTop;
+      const chapterStart = panelTop - CHAPTER_TOP_OFFSET;
+      const span = end - chapterStart;
+      if (span <= 1) return 1;
+      return Math.min(1, Math.max(0, (scrollTop - chapterStart) / span));
+    }
+
+    return Math.min(1, Math.max(0, (scrollTop - start) / (end - start)));
+  }
+
+  function updateReadingProgress() {
+    if (!isReaderOpen()) return;
+
+    const percent = Math.round(computeChapterProgress() * 100);
+    if (percent !== lastProgressPercent) {
+      lastProgressPercent = percent;
+      readingProgressPercent.textContent = String(percent);
+      readingProgress.setAttribute('aria-valuenow', String(percent));
+    }
+  }
+
+  function resetReadingProgress() {
+    lastProgressPercent = -1;
+    readingProgressPercent.textContent = '0';
+    readingProgress.setAttribute('aria-valuenow', '0');
+  }
+
+  function scheduleProgressUpdate() {
+    if (progressFrameId) return;
+    progressFrameId = requestAnimationFrame(() => {
+      progressFrameId = 0;
+      updateReadingProgress();
+    });
+  }
+
+  function scrollToChapterTop() {
+    if (!isReaderOpen() || !contentPanel) return;
+    const scrollTop = window.pageYOffset || document.documentElement.scrollTop || 0;
+    const target = Math.max(0, contentPanel.getBoundingClientRect().top + scrollTop - CHAPTER_TOP_OFFSET);
+    try {
+      window.scrollTo({ top: target, behavior: 'instant' });
+    } catch {
+      window.scrollTo(0, target);
+    }
+  }
+
   window.addEventListener('resize', () => {
     if (readerContainer.style.display !== 'none') {
       positionFixedButtons();
+      scheduleProgressUpdate();
       if (!sidebar.classList.contains('hidden')) {
         positionSidebar();
       }
@@ -581,11 +667,23 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   });
 
+  window.addEventListener('scroll', () => {
+    if (isReaderOpen()) scheduleProgressUpdate();
+  }, { passive: true });
+
+  // 图片、字体等异步内容会改变正文高度，重新测量一次
+  contentBody.addEventListener('load', scheduleProgressUpdate, true);
+  if (document.fonts && document.fonts.ready) {
+    document.fonts.ready.then(() => scheduleProgressUpdate());
+  }
+
   async function showChapter(index) {
     if (index < 0 || index >= chapters.length) return;
 
     const token = ++chapterRenderToken;
     currentChapterIndex = index;
+    chapterReady = false;
+    resetReadingProgress();
     const chapter = chapters[index];
     contentTitle.textContent = chapter.title;
 
@@ -603,6 +701,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // 章节根节点是 <body> 元素，展开子节点后插入，
         // 避免页面全局 body 样式（背景色等）作用到 EPUB 正文区域
         contentBody.append(...out.element.childNodes);
+        chapterReady = true;
         if (out.title && chapter.autoTitle) {
           chapter.title = out.title;
           chapter.autoTitle = false;
@@ -620,6 +719,7 @@ document.addEventListener('DOMContentLoaded', function() {
         p.textContent = line;
         contentBody.appendChild(p);
       });
+      chapterReady = true;
     }
 
     contentBody.style.fontSize = currentFontSize + 'px';
@@ -636,6 +736,10 @@ document.addEventListener('DOMContentLoaded', function() {
     if (currentBookId !== null) {
       saveProgress(currentBookId, index);
     }
+
+    // 换章后回到正文顶部，让章节进度从 0% 重新开始
+    scrollToChapterTop();
+    scheduleProgressUpdate();
   }
 
   renderBookshelf();
