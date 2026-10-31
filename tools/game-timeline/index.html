@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <link rel="icon" type="image/webp" href="../../images/favicon.webp">
+  <title>游戏公测时间线 — 生活工具箱</title>
+  <meta name="description" content="用垂直时间轴跟踪尚未公测的联网游戏，收录游戏 Logo、公测时间、运营厂商、类型、引擎，并附官网直达链接。">
+  <link rel="stylesheet" href="../../styles/main.css">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<main class="page-main">
+  <div class="container">
+    <div class="breadcrumb">
+      <a href="../../index.html">首页</a>
+      <span class="sep">/</span>
+      <span class="current">游戏公测时间线</span>
+    </div>
+
+    <header class="timeline-hero">
+      <div class="hero-top">
+        <div class="hero-eyebrow">Upcoming Beta Timeline</div>
+        <div class="hero-meta" id="heroMeta" aria-live="polite">
+          <span>数据更新中…</span>
+        </div>
+      </div>
+      <h1>游戏公测时间线</h1>
+      <p class="hero-sub">只收录还没公测的联网游戏。沿着时间轴，盯住它们各自的公测时间。</p>
+    </header>
+
+    <div class="timeline-toolbar">
+      <div class="filter-scroll" id="yearFilter" role="group" aria-label="按年份筛选"></div>
+      <div class="toolbar-right">
+        <span class="timeline-count" id="timelineCount" aria-live="polite"></span>
+        <button type="button" class="sort-toggle" id="sortToggle" data-order="asc" aria-pressed="false" aria-label="当前按公测时间由近到远排列，点击切换为由远到近">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+            <path d="M7 4v16M7 4L4 7M7 4l3 3"/>
+            <path d="M17 20V4M17 20l-3-3M17 20l3-3"/>
+          </svg>
+          <span id="sortLabel">即将公测在前</span>
+        </button>
+      </div>
+    </div>
+
+    <section id="timeline" class="timeline has-state" aria-label="游戏公测时间线" aria-busy="true">
+      <div class="timeline-state" role="status">
+        <div class="state-spinner" aria-hidden="true"></div>
+        <p>正在载入公测时间线…</p>
+      </div>
+    </section>
+
+    <noscript>
+      <div class="timeline-state timeline-noscript">
+        <p>请启用 JavaScript，页面才能读取 games.json 并渲染时间线。</p>
+      </div>
+    </noscript>
+
+    <p class="timeline-note">数据文件：<a href="games.json" target="_blank" rel="noopener">games.json</a> · 新增游戏后刷新页面即可更新</p>
+  </div>
+</main>
+
+<footer>
+  <p>生活工具箱 &copy; 2026 — 简约实用的在线工具集合</p>
+  <p><a href="https://github.com/Subject-Z/life-tools" target="_blank" rel="noopener noreferrer">反馈与建议</a></p>
+</footer>
+
+<script>
+  // file:// 下浏览器会同时拦截模块脚本与 fetch，提前给出明确指引，避免一直停在加载态。
+  if (window.location.protocol === 'file:') {
+    var timeline = document.getElementById('timeline');
+    var heroMeta = document.getElementById('heroMeta');
+    if (heroMeta) heroMeta.textContent = '数据更新时间未知';
+    if (timeline) {
+      timeline.classList.add('has-state');
+      timeline.setAttribute('aria-busy', 'false');
+      timeline.innerHTML = '<div class="timeline-state timeline-error" role="alert">' +
+        '<div class="state-icon" aria-hidden="true">!</div>' +
+        '<h2>请通过本地服务器打开</h2>' +
+        '<p>浏览器禁止在 file:// 协议下加载模块脚本与 games.json。</p>' +
+        '<p class="state-hint">请运行项目根目录的 <code>start_server.bat</code>，再通过它打开的本地地址访问本页。</p>' +
+        '</div>';
+    }
+  }
+</script>
+
+<script type="module" src="script.js"></script>
+
+</body>
+</html>

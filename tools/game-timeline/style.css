@@ -1,0 +1,908 @@
+/* ============================================================
+   游戏公测时间线
+   ============================================================ */
+
+/* ---------- Hero ---------- */
+.timeline-hero {
+  padding: 0.3rem 0 1.25rem;
+}
+
+.hero-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.35rem 1rem;
+}
+
+.hero-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.64rem;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.hero-eyebrow::before {
+  content: '';
+  width: 34px;
+  height: 1px;
+  background: var(--accent);
+}
+
+.timeline-hero h1 {
+  margin: 0.55rem 0 0.4rem;
+  font-size: clamp(1.75rem, 3.6vw, 2.45rem);
+  line-height: 1.15;
+  letter-spacing: -0.04em;
+  background: linear-gradient(135deg, var(--text-primary) 0%, var(--text-primary) 55%, var(--accent) 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+}
+
+.hero-sub {
+  max-width: 620px;
+  color: var(--text-secondary);
+  font-size: 0.84rem;
+  line-height: 1.7;
+}
+
+/* 页头仅保留数据更新时间，与 eyebrow 同一行右对齐 */
+.hero-meta {
+  display: inline-flex;
+  align-items: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.64rem;
+  letter-spacing: 0.02em;
+  line-height: 1.6;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.hero-meta strong {
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+/* ---------- Toolbar ---------- */
+.timeline-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  padding: 0.8rem 0;
+  background: rgba(235, 230, 218, 0.9);
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border);
+}
+
+.filter-scroll {
+  display: flex;
+  gap: 0.4rem;
+  min-width: 0;
+  overflow-x: auto;
+  padding: 0.15rem 0;
+  scrollbar-width: none;
+}
+
+.filter-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.filter-chip {
+  flex: 0 0 auto;
+  padding: 0.36rem 0.9rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  letter-spacing: 0.02em;
+  line-height: 1.6;
+  cursor: pointer;
+  transition: background var(--transition), border-color var(--transition), color var(--transition);
+}
+
+.filter-chip:hover {
+  color: var(--text-primary);
+  border-color: var(--border-strong);
+  background: var(--bg-secondary);
+}
+
+.filter-chip[aria-pressed="true"] {
+  color: var(--bg-primary);
+  border-color: var(--text-primary);
+  background: var(--text-primary);
+}
+
+.toolbar-right {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+}
+
+.timeline-count {
+  white-space: nowrap;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.68rem;
+  color: var(--text-muted);
+}
+
+.sort-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  white-space: nowrap;
+  padding: 0.36rem 0.8rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 0.72rem;
+  cursor: pointer;
+  transition: color var(--transition), border-color var(--transition), background var(--transition);
+}
+
+.sort-toggle:hover {
+  color: var(--text-primary);
+  border-color: var(--border-strong);
+  background: var(--bg-secondary);
+}
+
+.sort-toggle svg {
+  width: 13px;
+  height: 13px;
+  transition: transform var(--transition);
+}
+
+.sort-toggle[data-order="asc"] svg {
+  transform: rotate(180deg);
+}
+
+/* ---------- Timeline shell ---------- */
+.timeline {
+  --line-x: 112px;
+  position: relative;
+  padding-bottom: 2rem;
+}
+
+.timeline::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 1.5rem;
+  left: var(--line-x);
+  width: 2px;
+  margin-left: -1px;
+  border-radius: 2px;
+  background: linear-gradient(180deg,
+    rgba(184, 134, 11, 0) 0%,
+    rgba(184, 134, 11, 0.3) 4%,
+    rgba(184, 134, 11, 0.3) 96%,
+    rgba(184, 134, 11, 0) 100%);
+}
+
+.timeline.has-state::before {
+  display: none;
+}
+
+/* ---------- Year heading ---------- */
+.timeline-year + .timeline-year .year-heading {
+  margin-top: 2.4rem;
+}
+
+.year-heading {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin: 1.4rem 0 1.2rem;
+}
+
+.year-num {
+  flex: 0 0 calc(var(--line-x) - 1rem);
+  text-align: right;
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 2rem;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: 0.02em;
+  color: var(--text-primary);
+}
+
+.year-rule {
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, var(--border-strong) 0%, var(--border) 55%, transparent 100%);
+}
+
+.year-count {
+  flex: 0 0 auto;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.64rem;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+}
+
+.year-heading::before {
+  content: '';
+  position: absolute;
+  left: var(--line-x);
+  top: 50%;
+  width: 7px;
+  height: 7px;
+  border: 1px solid var(--accent);
+  background: var(--bg-primary);
+  transform: translate(-50%, -50%) rotate(45deg);
+}
+
+/* ---------- Timeline item ---------- */
+.timeline-item {
+  position: relative;
+  display: grid;
+  grid-template-columns: var(--line-x) minmax(0, 1fr);
+  align-items: start;
+}
+
+.timeline-item + .timeline-item {
+  margin-top: 1.1rem;
+}
+
+.item-date {
+  padding: 1.45rem 1.35rem 0 0;
+  text-align: right;
+  font-family: 'Cormorant Garamond', serif;
+  line-height: 1;
+  color: var(--text-secondary);
+}
+
+.item-date-main {
+  display: block;
+  font-size: 1.45rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  color: var(--text-primary);
+}
+
+.item-date-week {
+  display: block;
+  margin-top: 0.3rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  letter-spacing: 0.14em;
+  color: var(--text-muted);
+}
+
+/* 档期待定的条目：日期栏改用弱化的「待定」 */
+.item-date.is-pending .item-date-main {
+  font-size: 1.1rem;
+  color: var(--text-muted);
+}
+
+.item-date.is-pending .item-date-week {
+  letter-spacing: 0.2em;
+}
+
+.meta-pending {
+  color: var(--text-secondary);
+}
+
+/* 待定分组的标题 */
+.year-num-pending {
+  font-family: 'Noto Serif SC', 'Songti SC', 'SimSun', serif;
+  font-size: 1.15rem;
+  letter-spacing: 0.08em;
+  color: var(--text-secondary);
+}
+
+.node-dot {
+  position: absolute;
+  left: var(--line-x);
+  top: 1.95rem;
+  z-index: 1;
+  width: 13px;
+  height: 13px;
+  margin-left: -6.5px;
+  border: 1.5px solid var(--accent);
+  border-radius: 50%;
+  background: var(--bg-primary);
+  box-shadow: 0 0 0 4px var(--bg-primary);
+}
+
+.node-dot::after {
+  content: '';
+  position: absolute;
+  inset: 2.5px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+/* ---------- Game card ---------- */
+.timeline-item > .game-card {
+  margin-left: 1.4rem;
+}
+
+.game-card {
+  position: relative;
+  display: grid;
+  grid-template-columns: 112px minmax(0, 1fr) minmax(220px, 300px);
+  gap: 1.35rem;
+  padding: 1.35rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--bg-card);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Logo */
+.game-logo {
+  position: relative;
+  align-self: start;
+  width: 112px;
+  aspect-ratio: 1;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 17%;
+  background: var(--bg-secondary);
+}
+
+.game-logo img {
+  position: relative;
+  z-index: 1;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* 横版字标类 Logo：等比缩放并留白，避免被裁切 */
+.game-logo img.is-contain {
+  object-fit: contain;
+  padding: 16%;
+}
+
+.logo-fallback {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Noto Serif SC', 'Songti SC', 'SimSun', serif;
+  font-size: 2.7rem;
+  font-weight: 700;
+  color: var(--accent);
+  background: linear-gradient(145deg, var(--bg-secondary), var(--bg-input));
+}
+
+/* Info */
+.game-info {
+  min-width: 0;
+}
+
+.game-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.65rem;
+}
+
+.game-name {
+  font-size: 1.32rem;
+  font-weight: 600;
+  line-height: 1.35;
+  letter-spacing: -0.01em;
+}
+
+.game-name-en {
+  padding-top: 0.15rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.62rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.08rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.64rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  line-height: 1.8;
+}
+
+.status-badge::before {
+  content: '';
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.status-today {
+  color: var(--warning-text);
+  background: var(--warning-bg);
+}
+
+.game-tagline {
+  margin-top: 0.45rem;
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+  line-height: 1.65;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.game-meta {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem 1.5rem;
+  margin-top: 0.95rem;
+}
+
+.meta-item {
+  display: grid;
+  grid-template-columns: 3rem minmax(0, 1fr);
+  align-items: baseline;
+  gap: 0.4rem;
+  min-width: 0;
+}
+
+.meta-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.66rem;
+  letter-spacing: 0.02em;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.meta-value {
+  min-width: 0;
+  font-size: 0.8rem;
+  line-height: 1.6;
+  color: var(--text-primary);
+}
+
+.meta-value.muted {
+  color: var(--text-muted);
+}
+
+/* 官网直达链接：直接显示域名，不再用「官网」文案标签 */
+.official-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.28rem;
+  padding: 0.02rem 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--bg-secondary);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.64rem;
+  letter-spacing: 0.01em;
+  line-height: 1.9;
+  color: #8a6405;
+  transition: color var(--transition), border-color var(--transition), background var(--transition);
+}
+
+.official-link:hover {
+  color: #6f5004;
+  border-color: currentColor;
+  background: var(--bg-card);
+}
+
+.official-link svg {
+  width: 10px;
+  height: 10px;
+  opacity: 0.85;
+}
+
+/* Cover */
+.game-cover {
+  position: relative;
+  align-self: center;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg-secondary);
+}
+
+.game-cover img {
+  position: relative;
+  z-index: 1;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.game-cover::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background: linear-gradient(180deg, rgba(20, 18, 15, 0) 58%, rgba(20, 18, 15, 0.18));
+}
+
+.game-cover.is-missing::after {
+  display: none;
+}
+
+.cover-fallback {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.15rem;
+  background: linear-gradient(135deg, var(--bg-input), var(--bg-secondary));
+  color: var(--accent);
+}
+
+.cover-fallback-mark {
+  font-family: 'Noto Serif SC', 'Songti SC', 'SimSun', serif;
+  font-size: 3rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.cover-fallback-name {
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+}
+
+/* ---------- States ---------- */
+.timeline-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.8rem;
+  padding: 4rem 1.5rem;
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-lg);
+  background: rgba(255, 255, 255, 0.32);
+  color: var(--text-secondary);
+  text-align: center;
+}
+
+.timeline-state p {
+  font-size: 0.85rem;
+  line-height: 1.7;
+}
+
+.timeline-state h2 {
+  font-size: 1.25rem;
+}
+
+.state-spinner {
+  width: 26px;
+  height: 26px;
+  border: 2px solid var(--border-strong);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: timeline-spin 0.8s linear infinite;
+}
+
+@keyframes timeline-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.state-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border: 1px solid var(--border-strong);
+  border-radius: 50%;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 1rem;
+  color: var(--text-muted);
+}
+
+.timeline-error {
+  border-style: solid;
+  border-color: rgba(239, 68, 68, 0.22);
+  background: var(--error-bg);
+}
+
+.timeline-error .state-icon {
+  color: var(--error-text);
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+.timeline-error p {
+  max-width: 520px;
+  color: var(--text-secondary);
+}
+
+.timeline-error .state-hint {
+  color: var(--text-muted);
+  font-size: 0.76rem;
+}
+
+.timeline-error code {
+  padding: 0.1rem 0.35rem;
+  border-radius: 4px;
+  background: rgba(45, 42, 38, 0.06);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+}
+
+.timeline-note {
+  margin-top: 2rem;
+  text-align: right;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.66rem;
+  color: var(--text-muted);
+}
+
+.timeline-noscript {
+  margin-top: 1rem;
+}
+
+.timeline-note a {
+  color: var(--text-secondary);
+  border-bottom: 1px solid var(--border-strong);
+}
+
+.timeline-note a:hover {
+  color: #8a6405;
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width: 1120px) {
+  .timeline {
+    --line-x: 100px;
+  }
+
+  .game-card {
+    grid-template-columns: 96px minmax(0, 1fr) minmax(200px, 250px);
+    gap: 1.15rem;
+    padding: 1.2rem;
+  }
+
+  .game-logo {
+    width: 96px;
+  }
+}
+
+@media (max-width: 1000px) {
+  .game-meta {
+    grid-template-columns: 1fr;
+    gap: 0.45rem;
+  }
+}
+
+@media (max-width: 960px) {
+  .timeline {
+    --line-x: 92px;
+  }
+
+  .game-card {
+    grid-template-columns: 92px minmax(0, 1fr) minmax(180px, 220px);
+  }
+
+  .game-logo {
+    width: 92px;
+  }
+}
+
+@media (max-width: 860px) {
+  .game-card {
+    grid-template-columns: 92px minmax(0, 1fr);
+  }
+
+  .game-cover {
+    grid-column: 1 / -1;
+    aspect-ratio: 21 / 9;
+  }
+
+  .game-meta {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.5rem 1.5rem;
+  }
+
+  .timeline-count {
+    display: none;
+  }
+}
+
+@media (max-width: 680px) {
+  .timeline {
+    --line-x: 58px;
+  }
+
+  .timeline-hero {
+    padding-top: 0.2rem;
+    padding-bottom: 1rem;
+  }
+
+  .hero-eyebrow {
+    font-size: 0.58rem;
+    letter-spacing: 0.2em;
+  }
+
+  .hero-eyebrow::before {
+    width: 22px;
+  }
+
+  .hero-meta {
+    font-size: 0.58rem;
+  }
+
+  .timeline-hero h1 {
+    font-size: clamp(1.6rem, 7vw, 2rem);
+  }
+
+  .hero-sub {
+    font-size: 0.78rem;
+    line-height: 1.65;
+  }
+
+  .timeline-toolbar {
+    gap: 0.55rem;
+  }
+
+  .filter-scroll {
+    flex: 1 1 auto;
+  }
+
+  .toolbar-right {
+    margin-left: auto;
+  }
+
+  .year-heading {
+    gap: 0.7rem;
+    margin: 1.2rem 0 1rem;
+  }
+
+  .year-num {
+    flex-basis: calc(var(--line-x) - 0.7rem);
+    font-size: 1.15rem;
+  }
+
+  .year-count {
+    display: none;
+  }
+
+  .year-heading::before {
+    width: 6px;
+    height: 6px;
+  }
+
+  .item-date {
+    padding: 1.2rem 0.65rem 0 0;
+  }
+
+  .item-date-main {
+    font-size: 1rem;
+  }
+
+  .item-date-week {
+    display: none;
+  }
+
+  .node-dot {
+    top: 1.6rem;
+    width: 11px;
+    height: 11px;
+    margin-left: -5.5px;
+    box-shadow: 0 0 0 3px var(--bg-primary);
+  }
+
+  .timeline-item > .game-card {
+    margin-left: 0.85rem;
+  }
+
+  .game-card {
+    grid-template-columns: 76px minmax(0, 1fr);
+    gap: 0.9rem 1rem;
+    padding: 0.95rem;
+    border-radius: var(--radius-md);
+  }
+
+  .game-logo {
+    grid-row: 1;
+    width: 76px;
+  }
+
+  .game-info {
+    grid-row: 1;
+  }
+
+  .game-cover {
+    grid-row: 2;
+    aspect-ratio: 21 / 9;
+    border-radius: var(--radius-sm);
+  }
+
+  .game-name {
+    font-size: 1.15rem;
+  }
+
+  .game-tagline {
+    font-size: 0.76rem;
+  }
+
+  .game-meta {
+    margin-top: 0.8rem;
+  }
+
+  .timeline-note {
+    text-align: left;
+  }
+}
+
+@media (max-width: 560px) {
+  .game-meta {
+    grid-template-columns: 1fr;
+    gap: 0.45rem;
+  }
+}
+
+@media (max-width: 460px) {
+  .game-card {
+    grid-template-columns: 1fr;
+  }
+
+  .game-logo {
+    grid-row: auto;
+    width: 64px;
+  }
+
+  .game-info {
+    grid-row: auto;
+  }
+
+  .game-cover {
+    grid-row: auto;
+    aspect-ratio: 16 / 9;
+  }
+
+  .game-meta {
+    grid-template-columns: 1fr;
+    gap: 0.45rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .filter-chip,
+  .sort-toggle,
+  .sort-toggle svg {
+    transition: none;
+  }
+
+  .state-spinner {
+    animation-duration: 1.6s;
+  }
+}
+
+button:focus-visible,
+a:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}

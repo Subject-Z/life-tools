@@ -18,6 +18,9 @@
 #### 4. 电子书阅读器
 加载本地 TXT / EPUB 电子书，自动识别章节目录，支持书架管理、字体调节、阅读进度记忆与章节内百分比进度。
 
+#### 5. 游戏公测时间线
+跟踪尚未公测的联网游戏，以垂直时间轴按日期串联游戏卡片，卡片采用左中右三栏布局：左侧游戏 Logo，中间游戏名称、公测时间、运营厂商、游戏类型、游戏引擎与官网链接，右侧宣传图。游戏数据集中存放在 `tools/game-timeline/games.json`，网页打开时直接加载并渲染，支持年份筛选与时间正序 / 倒序切换。尚未定档的游戏会归入时间线末尾的「待定」分组。请通过本地 HTTP 服务打开页面（可运行根目录的 `start_server.bat`），直接双击 HTML 会被浏览器拦截 JSON 读取。
+
 ---
 
 ## English
@@ -35,3 +38,6 @@ Real-time exchange rates for major global currencies. Supports 100+ currency con
 
 #### 4. E-book Reader
 Load local TXT / EPUB e-books with automatic chapter and table-of-contents recognition. Features bookshelf management, font size adjustment, reading progress memory, and in-chapter percentage progress.
+
+#### 5. Game Public Beta Timeline
+Tracks online games that have not yet entered public beta. A vertical timeline links game cards by public beta date. Each card uses a three-column layout: game logo on the left; name, public beta date, publisher, genre, engine, and official website in the middle; promotional artwork on the right. Game data is maintained in `tools/game-timeline/games.json` and loaded directly when the page opens, with year filtering and ascending / descending time sorting.

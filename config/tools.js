@@ -31,6 +31,14 @@ export const toolsConfig = {
       path: 'tools/ebook-reader/index.html',
       icon: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>',
       category: '文本处理'
+    },
+    {
+      id: 'game-timeline',
+      name: '游戏公测时间线',
+      description: '跟踪尚未公测的联网游戏的公测时间，以垂直时间轴串联节点，三栏卡片展示 Logo、公测时间、运营厂商、类型、引擎与官网，并配有宣传图；游戏数据由 games.json 独立维护。',
+      path: 'tools/game-timeline/index.html',
+      icon: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="4" x2="4" y2="20"/><circle cx="4" cy="7" r="1.5"/><circle cx="4" cy="13" r="1.5"/><circle cx="4" cy="19" r="1.5"/><rect x="9" y="4" width="11" height="5" rx="1.5"/><rect x="9" y="11" width="8" height="5" rx="1.5"/><rect x="9" y="18" width="10" height="3" rx="1.5"/></svg>',
+      category: '游戏娱乐'
     }
   ]
 };
