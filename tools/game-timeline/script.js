@@ -84,6 +84,7 @@ function normalizeGame(raw, index) {
     genre: raw.genre ? String(raw.genre) : '待公布',
     engine: raw.engine ? String(raw.engine) : '待公布',
     officialUrl: sanitizeUrl(raw.officialUrl),
+    eventUrl: sanitizeUrl(raw.eventUrl),
     logo: sanitizeUrl(raw.logo),
     logoFit: raw.logoFit === 'contain' ? 'contain' : '',
     cover: sanitizeUrl(raw.cover),
@@ -98,15 +99,6 @@ function isReleaseToday(date) {
   return date.getFullYear() === now.getFullYear()
     && date.getMonth() === now.getMonth()
     && date.getDate() === now.getDate();
-}
-
-// 官网链接直接显示域名本身，不再用「官网」字样做标签。
-function hostLabel(url) {
-  try {
-    return new URL(url).hostname.replace(/^www\./i, '');
-  } catch {
-    return url.replace(/^https?:\/\//i, '').replace(/\/$/, '');
-  }
 }
 
 const datedGames = () => state.games.filter((game) => !game.tba);
@@ -141,6 +133,35 @@ const externalIcon = `
     <line x1="10" y1="14" x2="21" y2="3"/>
   </svg>`;
 
+const globeIcon = `
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+    <circle cx="12" cy="12" r="9"/>
+    <path d="M3 12h18"/>
+    <path d="M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z"/>
+  </svg>`;
+
+const eventIcon = `
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+    <path d="M12 3.5l1.7 4.3 4.3 1.7-4.3 1.7L12 15.5l-1.7-4.3L6 9.5l4.3-1.7z"/>
+    <path d="M17.6 15.4l.9 2.1 2.1.9-2.1.9-.9 2.1-.9-2.1-2.1-.9 2.1-.9z"/>
+  </svg>`;
+
+// 卡片底部的入口行：官网固定显示「官网」中文文案，有独立活动页时再追加「公测活动」。
+// 活动页与官网指向同一地址时不重复渲染，只留官网入口。
+function renderLinks(game) {
+  const pills = [];
+
+  if (game.officialUrl) {
+    pills.push(`<a class="game-link game-link-official" href="${escapeHtml(game.officialUrl)}" target="_blank" rel="noopener noreferrer" aria-label="${escapeHtml(game.name)} 官网，在新窗口打开">${globeIcon}<span>官网</span>${externalIcon}</a>`);
+  }
+
+  if (game.eventUrl && game.eventUrl !== game.officialUrl) {
+    pills.push(`<a class="game-link game-link-event" href="${escapeHtml(game.eventUrl)}" target="_blank" rel="noopener noreferrer" aria-label="${escapeHtml(game.name)} 公测活动页，在新窗口打开">${eventIcon}<span>公测活动</span>${externalIcon}</a>`);
+  }
+
+  return pills.length ? `<div class="game-links">${pills.join('')}</div>` : '';
+}
+
 function renderMeta(game) {
   const dateValue = game.date
     ? formatFullDate(game.date)
@@ -170,10 +191,6 @@ function renderItem(game) {
 
   const todayBadge = isReleaseToday(game.date)
     ? '<span class="status-badge status-today">今日公测</span>'
-    : '';
-
-  const officialLink = game.officialUrl
-    ? `<a class="official-link" href="${escapeHtml(game.officialUrl)}" target="_blank" rel="noopener noreferrer" aria-label="${escapeHtml(game.name)} 官网，在新窗口打开">${escapeHtml(hostLabel(game.officialUrl))} ${externalIcon}</a>`
     : '';
 
   const logo = game.logo
@@ -208,10 +225,10 @@ function renderItem(game) {
             <h3 class="game-name" id="${game.domId}-name">${escapeHtml(game.name)}</h3>
             ${game.nameEn ? `<span class="game-name-en">${escapeHtml(game.nameEn)}</span>` : ''}
             ${todayBadge}
-            ${officialLink}
           </div>
           ${game.tagline ? `<p class="game-tagline">${escapeHtml(game.tagline)}</p>` : ''}
           <dl class="game-meta">${renderMeta(game)}</dl>
+          ${renderLinks(game)}
         </div>
         <div class="game-cover">
           <span class="cover-fallback" aria-hidden="true">

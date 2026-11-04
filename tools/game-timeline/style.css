@@ -483,33 +483,61 @@
   color: var(--text-muted);
 }
 
-/* 官网直达链接：直接显示域名，不再用「官网」文案标签 */
-.official-link {
+/* 卡片入口行：官网（显示域名）与公测活动并排，活动入口用实心色块突出 */
+.game-links {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 0.95rem;
+  padding-top: 0.85rem;
+  border-top: 1px dashed var(--border);
+}
+
+.game-link {
   display: inline-flex;
   align-items: center;
-  gap: 0.28rem;
-  padding: 0.02rem 0.5rem;
+  gap: 0.32rem;
+  padding: 0.1rem 0.55rem;
   border: 1px solid var(--border);
   border-radius: 999px;
   background: var(--bg-secondary);
   font-family: 'JetBrains Mono', monospace;
-  font-size: 0.64rem;
+  font-size: 0.66rem;
   letter-spacing: 0.01em;
-  line-height: 1.9;
+  line-height: 1.8;
   color: #8a6405;
   transition: color var(--transition), border-color var(--transition), background var(--transition);
 }
 
-.official-link:hover {
+.game-link:hover {
   color: #6f5004;
   border-color: currentColor;
   background: var(--bg-card);
 }
 
-.official-link svg {
-  width: 10px;
-  height: 10px;
-  opacity: 0.85;
+.game-link svg {
+  flex: 0 0 auto;
+  width: 11px;
+  height: 11px;
+  opacity: 0.9;
+}
+
+.game-link-event {
+  color: #fdfbf5;
+  border-color: #8a6405;
+  background: #8a6405;
+  letter-spacing: 0.02em;
+}
+
+.game-link-event:hover {
+  color: #ffffff;
+  border-color: #6f5004;
+  background: #6f5004;
+}
+
+.game-link-event svg {
+  opacity: 1;
 }
 
 /* Cover */
