@@ -27,6 +27,9 @@ document.addEventListener('DOMContentLoaded', function() {
   const backToBookshelf = document.getElementById('backToBookshelf');
   const readingProgress = document.getElementById('readingProgress');
   const readingProgressPercent = document.getElementById('readingProgressPercent');
+  const chapterWordCount = document.getElementById('chapterWordCount');
+  const wordCountValue = document.getElementById('wordCountValue');
+  const wordCountUnit = document.getElementById('wordCountUnit');
 
   let chapters = [];
   let currentChapterIndex = 0;
@@ -39,8 +42,17 @@ document.addEventListener('DOMContentLoaded', function() {
   let progressFrameId = 0;
   let lastProgressPercent = -1;
 
+  // 章节字数缓存：键为章节下标，换书时清空
+  const wordCountCache = new Map();
+
   // 章节正文顶部与视口顶部留出的间距，进度以此刻度为 0%
   const CHAPTER_TOP_OFFSET = 16;
+
+  // 逐字计数的字符范围：中日韩汉字、假名、注音、韩文音节/字母、々〇
+  // 中日文没有词间空格，韩文虽分词但习惯按字（글자）统计，故统一逐字计
+  const CJK_CHAR_PATTERN = /[\u3005\u3007\u3040-\u30ff\u31f0-\u31ff\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff\uff66-\uff9f\u1100-\u11ff\u3130-\u318f\uac00-\ud7af]/g;
+  // 其余字母文字（拉丁、希腊、西里尔等）按词计，支持词内连字符与撇号
+  const WORD_PATTERN = /[A-Za-z0-9\u00c0-\u024f\u0370-\u03ff\u0400-\u04ff]+(?:['\u2019-][A-Za-z0-9\u00c0-\u024f\u0370-\u03ff\u0400-\u04ff]+)*/g;
 
   const BOOKS_KEY = 'txtReader_books';
   const PROGRESS_KEY = 'txtReader_progress';
@@ -263,6 +275,8 @@ document.addEventListener('DOMContentLoaded', function() {
     chapterReady = false;
     readingProgress.style.display = chapters.length > 0 ? '' : 'none';
     resetReadingProgress();
+    resetChapterWordCount();
+    wordCountCache.clear();
     positionFixedButtons();
 
     if (chapters.length > 0) {
@@ -297,6 +311,8 @@ document.addEventListener('DOMContentLoaded', function() {
     sidebar.classList.add('hidden');
     settingsPanel.classList.add('hidden');
     resetReadingProgress();
+    resetChapterWordCount();
+    wordCountCache.clear();
 
     window.scrollTo({ top: 0, behavior: 'instant' });
 
@@ -635,6 +651,76 @@ document.addEventListener('DOMContentLoaded', function() {
     readingProgress.setAttribute('aria-valuenow', '0');
   }
 
+  // 取当前章节的纯文本：TXT 直接读解析结果，EPUB 取渲染后的文本
+  function getChapterText() {
+    const chapter = chapters[currentChapterIndex];
+    if (!chapter) return '';
+    if (bookFormat === 'epub') {
+      // innerText 会在块级元素边界补换行，避免英文段落被粘成一个词
+      return contentBody.innerText || contentBody.textContent || '';
+    }
+    return (chapter.content || []).join('\n');
+  }
+
+  // 字数统计：中日韩字符逐字计，西文按词计，混排时按主导语种决定单位
+  function countText(text) {
+    if (!text) return { cjk: 0, words: 0, total: 0, unit: '字' };
+
+    const source = text.replace(/\r\n?/g, '\n');
+    const cjkMatches = source.match(CJK_CHAR_PATTERN);
+    const cjk = cjkMatches ? cjkMatches.length : 0;
+    const wordMatches = source.replace(CJK_CHAR_PATTERN, ' ').match(WORD_PATTERN);
+    const words = wordMatches ? wordMatches.length : 0;
+
+    return {
+      cjk,
+      words,
+      total: cjk + words,
+      unit: cjk >= words ? '字' : '词'
+    };
+  }
+
+  // 侧栏宽度有限：万以上折算为「万」，完整数字放在 tooltip 里
+  function formatCountShort(num) {
+    if (num < 10000) return String(num);
+    const wan = num / 10000;
+    const text = wan >= 100 ? String(Math.round(wan)) : wan.toFixed(1).replace(/\.0$/, '');
+    return text + '万';
+  }
+
+  function formatCountExact(num) {
+    return String(num).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  }
+
+  function resetChapterWordCount() {
+    wordCountValue.textContent = '—';
+    wordCountUnit.textContent = '字';
+    chapterWordCount.title = '本章字数';
+  }
+
+  function updateChapterWordCount() {
+    if (!isReaderOpen() || currentBookId === null || !chapters.length || !chapterReady) {
+      resetChapterWordCount();
+      return;
+    }
+
+    const index = currentChapterIndex;
+    let stat = wordCountCache.get(index);
+    if (!stat) {
+      stat = countText(getChapterText());
+      wordCountCache.set(index, stat);
+    }
+
+    wordCountValue.textContent = formatCountShort(stat.total);
+    wordCountUnit.textContent = stat.unit;
+
+    let tip = '本章字数：' + formatCountExact(stat.total) + ' ' + stat.unit;
+    if (stat.cjk > 0 && stat.words > 0) {
+      tip += '（' + formatCountExact(stat.cjk) + ' 字 + ' + formatCountExact(stat.words) + ' 词）';
+    }
+    chapterWordCount.title = tip;
+  }
+
   function scheduleProgressUpdate() {
     if (progressFrameId) return;
     progressFrameId = requestAnimationFrame(() => {
@@ -684,6 +770,7 @@ document.addEventListener('DOMContentLoaded', function() {
     currentChapterIndex = index;
     chapterReady = false;
     resetReadingProgress();
+    resetChapterWordCount();
     const chapter = chapters[index];
     contentTitle.textContent = chapter.title;
 
@@ -732,6 +819,9 @@ document.addEventListener('DOMContentLoaded', function() {
     prevChapter.disabled = index <= 0;
     nextChapter.disabled = index >= chapters.length - 1;
     chapterInfo.textContent = (index + 1) + ' / ' + chapters.length;
+
+    // 正文渲染完成后再统计，EPUB 的文本取自实际渲染结果
+    updateChapterWordCount();
 
     if (currentBookId !== null) {
       saveProgress(currentBookId, index);
