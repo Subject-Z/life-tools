@@ -459,12 +459,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
   backToBookshelf.addEventListener('click', showBookshelf);
 
+  // 目录与设置互斥：打开其中一个会关闭另一个
   toggleSidebar.addEventListener('click', (e) => {
     e.stopPropagation();
     if (!sidebar.classList.contains('hidden')) {
       sidebar.classList.add('hidden');
       return;
     }
+    settingsPanel.classList.add('hidden');
     positionSidebar();
     sidebar.classList.remove('hidden');
     requestAnimationFrame(() => {
@@ -486,6 +488,7 @@ document.addEventListener('DOMContentLoaded', function() {
       settingsPanel.classList.add('hidden');
       return;
     }
+    sidebar.classList.add('hidden');
     positionSettingsPanel();
     settingsPanel.classList.remove('hidden');
   });
